@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-script: var(--font-pacifico), cursive;
+
+  --color-brand: #ff6a3d;
+  --color-brand-dark: #e5542a;
+  --color-brand-soft: #fff0ea;
+  --color-ink: #0e2a47;
+  --color-muted: #64748b;
+  --color-line: #e7ebf0;
+  --color-surface: #f4f6f9;
+  --color-sea: #0b8fd6;
+  --color-verified: #0fa47a;
+
+  --color-cat-manger: #ff6a3d;
+  --color-cat-dormir: #3b82f6;
+  --color-cat-activites: #10b981;
+  --color-cat-sorties: #8b5cf6;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+/* Défilement horizontal sans barre visible (carrousels) */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
