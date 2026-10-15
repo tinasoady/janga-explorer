@@ -5,6 +5,7 @@ import { ArrowRight, MapPin, Search, Store } from "lucide-react";
 import { CATEGORY_STYLE } from "@/components/category";
 import { Logo } from "@/components/logo";
 import { OfferCard } from "@/components/offer-card";
+import { SectionTitle } from "@/components/section-title";
 import { getActiveOffers, getWeekendOffers } from "@/lib/offers";
 import { CATEGORIES, type Offer } from "@/lib/types";
 
@@ -130,9 +131,7 @@ function Carousel({ title, href, offers }: { title: string; href: string; offers
   return (
     <section className="pt-7 md:pt-12">
       <div className="flex items-center justify-between gap-3 px-4 pb-3 md:items-end md:pb-5">
-        <h2 className="text-lg font-extrabold md:font-display md:text-3xl md:font-bold md:tracking-wide md:uppercase md:after:mt-2 md:after:block md:after:h-1 md:after:w-14 md:after:rounded-full md:after:bg-sun">
-          {title}
-        </h2>
+        <SectionTitle>{title}</SectionTitle>
         <Link href={href} className="flex shrink-0 items-center gap-1 text-sm font-semibold whitespace-nowrap text-sea md:pb-3 md:hover:text-sea-dark">
           Voir tout
           <ArrowRight className="size-4" aria-hidden />

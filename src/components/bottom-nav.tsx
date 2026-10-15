@@ -18,7 +18,18 @@ const ITEMS = [
     label: "Profil",
     icon: User,
     match: (p: string) =>
-      ["/profil", "/pro", "/espace-pro", "/connexion", "/alertes", "/admin"].some((prefix) => p.startsWith(prefix)),
+      [
+        "/profil",
+        "/pro",
+        "/espace-pro",
+        "/connexion",
+        "/alertes",
+        "/admin",
+        "/a-propos",
+        "/confidentialite",
+        "/cookies",
+        "/conditions",
+      ].some((prefix) => p.startsWith(prefix)),
   },
 ];
 

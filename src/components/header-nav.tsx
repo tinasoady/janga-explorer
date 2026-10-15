@@ -5,12 +5,13 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { House } from "lucide-react";
 import { CATEGORIES, isCategory } from "@/lib/types";
 
-/** "home", "all" (toutes les offres) ou une clé de catégorie. */
+/** "home", "all" (toutes les offres), "about" ou une clé de catégorie. */
 type ActiveKey = string | null;
 
 const ITEMS = [
   { key: "all", href: "/bons-plans", label: "Tous les bons plans" },
   ...CATEGORIES.map((c) => ({ key: c.key as string, href: `/bons-plans?cat=${c.key}`, label: c.tile })),
+  { key: "about", href: "/a-propos", label: "À propos" },
 ];
 
 /** Bandeau bleu des rubriques (tablette et ordinateur), avec la rubrique courante mise en avant. */
@@ -20,6 +21,7 @@ export function CategoryBar() {
 
   let active: ActiveKey = null;
   if (pathname === "/") active = "home";
+  else if (pathname.startsWith("/a-propos")) active = "about";
   else if (pathname.startsWith("/bons-plans")) active = isCategory(cat) ? cat : "all";
 
   return <CategoryBarLinks active={active} />;
