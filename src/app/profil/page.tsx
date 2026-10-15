@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Bell, ChevronRight, Heart, Info, LogOut, ShieldCheck, Store, UserRound } from "lucide-react";
+import { ContactLinks } from "@/components/contact-links";
 import { FavoritesSync } from "@/components/favorites-sync";
 import { LEGAL_PAGES } from "@/components/legal-page";
 import { secondaryButtonClass } from "@/components/form-ui";
@@ -42,6 +43,11 @@ export default function ProfilPage() {
             nous avons confirmé ces informations directement avec l&apos;établissement. Les offres expirées
             disparaissent automatiquement.
           </p>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="font-bold">Nous contacter</h2>
+          <ContactLinks tone="light" />
         </section>
 
         <nav aria-label="Informations légales" className="flex flex-wrap gap-x-4 gap-y-2 text-xs font-semibold text-muted">

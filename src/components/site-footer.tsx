@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CATEGORIES } from "@/lib/types";
+import { ContactLinks } from "./contact-links";
 import { LEGAL_PAGES } from "./legal-page";
 import { LogoMark } from "./logo";
 
@@ -47,6 +48,10 @@ export function SiteFooter() {
             Janga Explorer
           </p>
           <p className="mt-3 max-w-xs leading-relaxed">Les bons plans de Mahajanga, au bon moment.</p>
+          <p className="mt-5 font-display text-base font-semibold tracking-wide text-white uppercase">Nous contacter</p>
+          <div className="mt-3">
+            <ContactLinks />
+          </div>
         </div>
         {COLUMNS.map((col) => (
           <nav key={col.title} aria-label={col.title}>
