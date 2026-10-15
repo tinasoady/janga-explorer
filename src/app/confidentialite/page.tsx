@@ -59,7 +59,7 @@ export default function ConfidentialitePage() {
       <p>Une fois votre compte activé, nous conservons également :</p>
       <ul>
         <li>
-          les informations de votre fiche établissement et de vos offres (photos, prix, conditions, dates, lieu) ainsi
+          les informations de votre fiche établissement et de vos offres (photos, prix, conditions, dates, lieu et localisation Google Maps) ainsi
           que le numéro WhatsApp et le téléphone de l&apos;établissement. <strong>Ces informations sont publiques</strong>{" "}
           : c&apos;est leur raison d&apos;être ;
         </li>

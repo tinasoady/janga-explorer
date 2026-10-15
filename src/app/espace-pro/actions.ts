@@ -48,6 +48,7 @@ export async function saveOffer(_prev: FormState, formData: FormData): Promise<F
     "priceOffer",
     "conditions",
     "location",
+    "mapUrl",
     "validUntil",
   ]);
 
@@ -80,6 +81,7 @@ export async function saveOffer(_prev: FormState, formData: FormData): Promise<F
     price_offer: o.priceOffer,
     conditions: o.conditions,
     location: o.location,
+    map_url: o.mapUrl,
     valid_until: o.validUntil,
   };
 

@@ -25,6 +25,7 @@ type OfferRow = {
   price_offer: number;
   conditions: string | null;
   location: string;
+  map_url: string | null;
   valid_until: string;
   is_verified: boolean;
   verified_at: string | null;
@@ -46,6 +47,7 @@ function toOffer(row: OfferRow): Offer | null {
     priceOffer: row.price_offer,
     conditions: row.conditions,
     location: row.location,
+    mapUrl: row.map_url,
     validUntil: row.valid_until,
     isVerified: row.is_verified,
     verifiedAt: row.verified_at,

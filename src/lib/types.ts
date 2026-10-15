@@ -35,6 +35,7 @@ export type Offer = {
   priceOffer: number;
   conditions: string | null;
   location: string;
+  mapUrl: string | null; // lien Google Maps donné par l'établissement (facultatif)
   validUntil: string; // date ISO (YYYY-MM-DD), dernier jour de validité inclus
   isVerified: boolean;
   verifiedAt: string | null; // date ISO

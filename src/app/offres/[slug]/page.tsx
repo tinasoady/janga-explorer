@@ -11,6 +11,7 @@ import {
   formatAriary,
   formatLongDate,
   formatVerifiedAgo,
+  mapsLink,
   whatsappLink,
 } from "@/lib/format";
 import { getActiveOffers, getOfferBySlug, getToday } from "@/lib/offers";
@@ -122,7 +123,12 @@ async function OfferDetails({ params }: { params: Promise<{ slug: string }> }) {
           <div className="flex gap-3">
             <dt className="sr-only">Lieu</dt>
             <MapPin className="size-5 shrink-0 text-muted" aria-hidden />
-            <dd>{offer.location}</dd>
+            <dd>
+              {offer.location}
+              {offer.mapUrl && (
+                <span className="mt-0.5 block text-xs font-semibold text-verified">Localisation précise fournie</span>
+              )}
+            </dd>
           </div>
         </dl>
 
@@ -140,6 +146,15 @@ async function OfferDetails({ params }: { params: Promise<{ slug: string }> }) {
               Contacter sur WhatsApp
             </a>
           )}
+          <a
+            href={mapsLink(offer)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 rounded-full border border-sea/40 bg-sea/5 py-3 font-semibold text-sea-dark transition active:scale-[0.98]"
+          >
+            <MapPin className="size-5" aria-hidden />
+            Voir la localisation
+          </a>
           {offer.business.phone && (
             <a
               href={`tel:${offer.business.phone.replace(/\s/g, "")}`}

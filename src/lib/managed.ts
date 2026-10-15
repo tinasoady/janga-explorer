@@ -25,6 +25,7 @@ export type ManagedOffer = {
   priceOffer: number;
   conditions: string | null;
   location: string;
+  mapUrl: string | null;
   validUntil: string;
   status: OfferStatus;
   rejectionReason: string | null;
@@ -53,6 +54,7 @@ export type ManagedOfferRow = {
   price_offer: number;
   conditions: string | null;
   location: string;
+  map_url: string | null;
   valid_until: string;
   status: OfferStatus;
   rejection_reason: string | null;
@@ -77,6 +79,7 @@ export function toManaged(row: ManagedOfferRow): ManagedOffer | null {
     priceOffer: row.price_offer,
     conditions: row.conditions,
     location: row.location,
+    mapUrl: row.map_url,
     validUntil: row.valid_until,
     status: row.status,
     rejectionReason: row.rejection_reason,

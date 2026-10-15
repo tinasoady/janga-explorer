@@ -56,6 +56,13 @@ export function formatVerifiedAgo(verifiedAt: string, today: string) {
   return `il y a ${days} jours`;
 }
 
+/** Lien vers le plan : la localisation exacte donnée par l'établissement, sinon une recherche par nom et lieu. */
+export function mapsLink(offer: { mapUrl: string | null; location: string; business: { name: string } }) {
+  if (offer.mapUrl) return offer.mapUrl;
+  const query = `${offer.business.name}, ${offer.location}${/mahajanga|majunga/i.test(offer.location) ? "" : ", Mahajanga"}`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
 export function whatsappLink(number: string, message: string) {
   return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 }

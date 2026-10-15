@@ -13,6 +13,7 @@ export type OfferInput = {
   priceOffer: number;
   conditions: string | null;
   location: string;
+  mapUrl: string | null;
   validUntil: string;
 };
 
@@ -51,6 +52,44 @@ export function parseBusiness(formData: FormData): Parsed<BusinessInput> {
   return { ok: true, value: { name, kind, whatsapp, phone: phone || null } };
 }
 
+const COORDINATES = /^(-?\d{1,2}(?:[.,]\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:[.,]\d+)?)$/;
+
+/**
+ * Localisation Google Maps saisie par le professionnel : le lien « Partager » de l'application
+ * (maps.app.goo.gl/…, google.com/maps/…) ou des coordonnées GPS (« -15.7167, 46.3167 »).
+ * Renvoie un lien https à enregistrer, null si le champ est vide, "invalid" sinon.
+ */
+export function normalizeMapLink(input: string): string | null | "invalid" {
+  const raw = input.trim();
+  if (!raw) return null;
+
+  const coords = raw.match(COORDINATES);
+  if (coords) {
+    const lat = Number(coords[1].replace(",", "."));
+    const lng = Number(coords[2].replace(",", "."));
+    if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return "invalid";
+    return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  }
+
+  let url: URL;
+  try {
+    url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+  } catch {
+    return "invalid";
+  }
+  const host = url.hostname.toLowerCase();
+  const isGoogleMaps =
+    host === "maps.app.goo.gl" ||
+    (host === "goo.gl" && url.pathname.startsWith("/maps")) ||
+    /^maps\.google\.[a-z.]+$/.test(host) ||
+    (/^(www\.)?google\.[a-z.]+$/.test(host) && url.pathname.startsWith("/maps"));
+  if (!isGoogleMaps || url.username || url.password) return "invalid";
+
+  url.protocol = "https:";
+  const link = url.toString();
+  return link.length <= 500 ? link : "invalid";
+}
+
 function parseAmount(raw: string): number | null | "invalid" {
   if (!raw) return null;
   const n = Number(raw.replace(/[\s ]/g, ""));
@@ -62,6 +101,7 @@ export function parseOffer(formData: FormData): Parsed<OfferInput> {
   const description = text(formData, "description");
   const category = text(formData, "category");
   const location = text(formData, "location");
+  const mapUrl = normalizeMapLink(text(formData, "mapUrl"));
   const conditions = text(formData, "conditions");
   const validUntil = text(formData, "validUntil");
   const priceOffer = parseAmount(text(formData, "priceOffer"));
@@ -73,6 +113,13 @@ export function parseOffer(formData: FormData): Parsed<OfferInput> {
     return { ok: false, error: "La description doit contenir entre 10 et 1000 caractères." };
   }
   if (location.length < 2 || location.length > 120) return { ok: false, error: "Indiquez le lieu de l'offre." };
+  if (mapUrl === "invalid") {
+    return {
+      ok: false,
+      error:
+        "La localisation doit être un lien Google Maps (bouton « Partager » → « Copier le lien ») ou des coordonnées GPS, ex : -15.7167, 46.3167.",
+    };
+  }
   if (conditions.length > 500) return { ok: false, error: "Les conditions sont trop longues (500 caractères maximum)." };
   if (priceOffer === null || priceOffer === "invalid") return { ok: false, error: "Indiquez le prix de l'offre, en ariary." };
   if (priceOriginal === "invalid") return { ok: false, error: "Le prix normal n'est pas valide." };
@@ -97,6 +144,7 @@ export function parseOffer(formData: FormData): Parsed<OfferInput> {
       priceOffer,
       conditions: conditions || null,
       location,
+      mapUrl,
       validUntil,
     },
   };

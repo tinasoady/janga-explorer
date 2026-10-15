@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useActionState } from "react";
+import { ExternalLink, MapPin } from "lucide-react";
 import { Field, FormMessage, inputClass, primaryButtonClass } from "@/components/form-ui";
 import { SubmitButton } from "@/components/submit-button";
 import type { ManagedOffer } from "@/lib/managed";
@@ -28,6 +29,7 @@ export function OfferForm({ offer, minDate, action: saveAction = saveOffer, admi
     priceOffer: offer?.priceOffer.toString() ?? "",
     conditions: offer?.conditions ?? "",
     location: offer?.location ?? "Mahajanga, ",
+    mapUrl: offer?.mapUrl ?? "",
     validUntil: offer?.validUntil ?? "",
   };
   const v = (name: string) => state?.values?.[name] ?? saved[name];
@@ -100,6 +102,39 @@ export function OfferForm({ offer, minDate, action: saveAction = saveOffer, admi
       <Field label="Lieu / quartier">
         <input name="location" required maxLength={120} defaultValue={v("location")} className={inputClass} />
       </Field>
+
+      {/* Facultatif, mais mis en avant : c'est ce qui permet au client de trouver l'endroit sans appeler. */}
+      <div className="space-y-2 rounded-2xl border border-sea/30 bg-sea/5 p-3.5">
+        <label htmlFor="mapUrl" className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+          <MapPin className="size-4 text-sea" aria-hidden />
+          Localisation Google Maps
+          <span className="rounded-full bg-sea px-2 py-0.5 text-[11px] font-bold text-white">Recommandé</span>
+        </label>
+        <input
+          id="mapUrl"
+          name="mapUrl"
+          maxLength={500}
+          inputMode="url"
+          placeholder="https://maps.app.goo.gl/…  ou  -15.7167, 46.3167"
+          defaultValue={v("mapUrl")}
+          className={inputClass}
+        />
+        <p className="text-xs text-muted">
+          Facultatif. Avec la localisation, la fiche de l&apos;offre affiche un bouton « Voir la localisation » qui
+          ouvre le plan : vos clients vous trouvent sans avoir à appeler. Dans Google Maps, touchez votre
+          établissement, puis <strong className="text-ink">Partager → Copier le lien</strong> et collez-le ici. Vous
+          pouvez aussi saisir des coordonnées GPS.
+        </p>
+        <a
+          href="https://www.google.com/maps/search/?api=1&query=Mahajanga"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-xs font-bold text-sea"
+        >
+          Ouvrir Google Maps
+          <ExternalLink className="size-3.5" aria-hidden />
+        </a>
+      </div>
 
       <Field label="Dernier jour de validité">
         <input name="validUntil" type="date" required min={minDate} defaultValue={v("validUntil")} className={inputClass} />

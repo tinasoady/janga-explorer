@@ -73,7 +73,7 @@ const businesses = {
   },
 } satisfies Record<string, Business>;
 
-type DemoOffer = Omit<Offer, "validUntil" | "verifiedAt"> & {
+type DemoOffer = Omit<Offer, "validUntil" | "verifiedAt" | "mapUrl"> & {
   validInDays: number;
   verifiedDaysAgo: number | null;
 };
@@ -313,6 +313,7 @@ const offers: DemoOffer[] = [
 export function getDemoOffers(today: string): Offer[] {
   return offers.map(({ validInDays, verifiedDaysAgo, ...offer }) => ({
     ...offer,
+    mapUrl: null,
     validUntil: addDaysIso(today, validInDays),
     verifiedAt: verifiedDaysAgo === null ? null : addDaysIso(today, -verifiedDaysAgo),
   }));

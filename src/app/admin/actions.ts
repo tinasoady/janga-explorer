@@ -73,7 +73,7 @@ export async function adminSaveOffer(_prev: FormState, formData: FormData): Prom
   const field = (n: string) => String(formData.get(n) ?? "");
   const values = Object.fromEntries(
     [
-      "title", "category", "description", "priceOriginal", "priceOffer", "conditions", "location", "validUntil",
+      "title", "category", "description", "priceOriginal", "priceOffer", "conditions", "location", "mapUrl", "validUntil",
       "businessId", "name", "kind", "whatsapp", "phone", "online", "verified", "featured",
     ].map((n) => [n, field(n)]),
   );
@@ -144,6 +144,7 @@ export async function adminSaveOffer(_prev: FormState, formData: FormData): Prom
     price_offer: o.priceOffer,
     conditions: o.conditions,
     location: o.location,
+    map_url: o.mapUrl,
     valid_until: o.validUntil,
     status: online ? "published" : existing && existing.status !== "published" ? existing.status : "pending",
     is_verified: verified,
