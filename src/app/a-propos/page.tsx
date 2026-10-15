@@ -64,7 +64,7 @@ const REASONS: { icon: LucideIcon; title: string; text: string }[] = [
   {
     icon: MapPin,
     title: "100 % Mahajanga",
-    text: "Nous ne couvrons qu'une ville, et nous la connaissons bien : de la Corniche à Amborovy.",
+    text: "Nous ne couvrons qu'une ville, et nous la connaissons bien : de Sotema à Amborovy,Antsanitia.",
   },
 ];
 
