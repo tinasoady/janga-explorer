@@ -34,7 +34,9 @@ export default function BonsPlansPage({ searchParams }: PageProps<"/bons-plans">
         >
           <ChevronLeft className="size-6" />
         </Link>
-        <h1 className="text-xl font-extrabold md:text-3xl">Bons plans</h1>
+        <h1 className="text-xl font-extrabold md:font-display md:text-4xl md:font-bold md:tracking-wide md:uppercase">
+          Bons plans
+        </h1>
       </header>
       <Suspense fallback={<ResultsSkeleton />}>
         <Results searchParams={searchParams} />
@@ -143,7 +145,7 @@ async function Results({ searchParams }: { searchParams: Promise<Params> }) {
         })}
       </div>
 
-      <div className="flex items-center justify-between px-4 pt-1">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 pt-1">
         <p className="text-sm text-muted" aria-live="polite">
           {offers.length} offre{offers.length > 1 ? "s" : ""}
           {filters.q && (
@@ -159,7 +161,7 @@ async function Results({ searchParams }: { searchParams: Promise<Params> }) {
               key={s.key}
               href={hrefWith(filters, { sort: s.key })}
               scroll={false}
-              className={`rounded-md px-1.5 py-0.5 font-semibold ${
+              className={`rounded-md px-1.5 py-0.5 font-semibold whitespace-nowrap ${
                 filters.sort === s.key ? "text-brand" : "text-muted"
               }`}
             >

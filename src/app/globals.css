@@ -3,6 +3,7 @@
 @theme {
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-script: var(--font-pacifico), cursive;
+  --font-display: var(--font-oswald), "Arial Narrow", sans-serif;
 
   --color-brand: #ff6a3d;
   --color-brand-dark: #e5542a;
@@ -12,6 +13,8 @@
   --color-line: #e7ebf0;
   --color-surface: #f4f6f9;
   --color-sea: #0b8fd6;
+  --color-sea-dark: #0870a8;
+  --color-sun: #ffb020;
   --color-verified: #0fa47a;
 
   --color-cat-manger: #ff6a3d;

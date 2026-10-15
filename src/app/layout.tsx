@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Pacifico, Plus_Jakarta_Sans } from "next/font/google";
+import { Oswald, Pacifico, Plus_Jakarta_Sans } from "next/font/google";
 import { Suspense } from "react";
 import { BottomNav } from "@/components/bottom-nav";
 import { SiteFooter } from "@/components/site-footer";
@@ -8,6 +8,13 @@ import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
+  subsets: ["latin"],
+});
+
+/** Titres en capitales condensées de l'accueil sur ordinateur */
+const oswald = Oswald({
+  variable: "--font-oswald",
+  weight: ["600", "700"],
   subsets: ["latin"],
 });
 
@@ -32,12 +39,13 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="fr" className={`${jakarta.variable} ${pacifico.variable} antialiased`}>
+    <html lang="fr" className={`${jakarta.variable} ${pacifico.variable} ${oswald.variable} antialiased`}>
       <body className="font-sans">
-        <div className="relative flex min-h-dvh flex-col bg-white">
+        {/* overflow-x-clip : les bandeaux pleine largeur (100vw) ne doivent pas créer de défilement horizontal */}
+        <div className="relative flex min-h-dvh flex-col overflow-x-clip bg-white">
           {/* Tablette et ordinateur : en-tête et pied de page. Téléphone : barre de navigation en bas. */}
           <SiteHeader />
-          <main className="mx-auto w-full max-w-6xl flex-1 pb-20 md:px-4 md:pb-10 lg:px-8">{children}</main>
+          <main className="mx-auto w-full max-w-6xl flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:px-4 md:pb-10 lg:px-8">{children}</main>
           <SiteFooter />
           {/* usePathname() n'est connu qu'à la requête sur les routes dynamiques : la barre arrive en streaming. */}
           <Suspense fallback={null}>

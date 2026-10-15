@@ -18,11 +18,16 @@ export function LogoMark({ className = "size-9" }: { className?: string }) {
   );
 }
 
-export function Logo() {
+const SIZES = {
+  md: { mark: "size-9", text: "text-xl" },
+  lg: { mark: "size-12", text: "text-2xl lg:text-[28px]" },
+};
+
+export function Logo({ size = "md" }: { size?: keyof typeof SIZES }) {
   return (
-    <Link href="/" className="flex items-center gap-2" aria-label="Janga Explorer, accueil">
-      <LogoMark />
-      <span className="text-xl font-extrabold tracking-tight text-ink">
+    <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Janga Explorer, accueil">
+      <LogoMark className={SIZES[size].mark} />
+      <span className={`${SIZES[size].text} font-extrabold tracking-tight whitespace-nowrap text-ink`}>
         Janga <span className="text-sea">Explorer</span>
       </span>
     </Link>

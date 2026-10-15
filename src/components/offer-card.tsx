@@ -94,7 +94,7 @@ export function OfferCard({ offer }: { offer: Offer }) {
 export function OfferRow({ offer }: { offer: Offer }) {
   return (
     <article className="relative flex gap-3 rounded-2xl border border-line bg-white p-2 shadow-sm">
-      <div className="relative w-32 shrink-0 overflow-hidden rounded-xl">
+      <div className="relative w-28 shrink-0 overflow-hidden rounded-xl min-[360px]:w-32">
         <Image src={offer.imageUrl} alt="" fill sizes="128px" className="object-cover" />
         <DiscountBadge offer={offer} size="sm" className="absolute top-1.5 left-1.5" />
         {offer.isVerified && <VerifiedBadge className="absolute bottom-1.5 left-1.5" />}

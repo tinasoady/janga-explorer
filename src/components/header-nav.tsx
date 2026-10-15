@@ -1,70 +1,58 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Heart, House, Store, Tag, User } from "lucide-react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { House } from "lucide-react";
+import { CATEGORIES, isCategory } from "@/lib/types";
 
-const LINKS = [
-  { href: "/", label: "Accueil", icon: House, match: (p: string) => p === "/" },
-  {
-    href: "/bons-plans",
-    label: "Bons plans",
-    icon: Tag,
-    match: (p: string) => p.startsWith("/bons-plans") || p.startsWith("/offres"),
-  },
-  { href: "/favoris", label: "Favoris", icon: Heart, match: (p: string) => p.startsWith("/favoris") },
-] as const;
+/** "home", "all" (toutes les offres) ou une clé de catégorie. */
+type ActiveKey = string | null;
 
-const ACCOUNT_PREFIXES = ["/profil", "/connexion", "/admin"];
+const ITEMS = [
+  { key: "all", href: "/bons-plans", label: "Tous les bons plans" },
+  ...CATEGORIES.map((c) => ({ key: c.key as string, href: `/bons-plans?cat=${c.key}`, label: c.tile })),
+];
 
-/** Navigation de l'en-tête (tablette et ordinateur). Sur téléphone, c'est la barre du bas qui prend le relais. */
-export function HeaderNav() {
+/** Bandeau bleu des rubriques (tablette et ordinateur), avec la rubrique courante mise en avant. */
+export function CategoryBar() {
   const pathname = usePathname();
-  const onPro = pathname.startsWith("/pro") || pathname.startsWith("/espace-pro");
-  const onAccount = ACCOUNT_PREFIXES.some((p) => pathname.startsWith(p));
+  const cat = useSearchParams().get("cat");
+
+  let active: ActiveKey = null;
+  if (pathname === "/") active = "home";
+  else if (pathname.startsWith("/bons-plans")) active = isCategory(cat) ? cat : "all";
+
+  return <CategoryBarLinks active={active} />;
+}
+
+/** Rendu sans état actif : sert aussi de repli pendant que l'URL n'est pas encore connue. */
+export function CategoryBarLinks({ active = null }: { active?: ActiveKey }) {
+  const item = (key: string) =>
+    `flex shrink-0 items-center border-b-[3px] px-4 font-display text-[15px] font-semibold tracking-wide uppercase transition lg:px-5 lg:text-base ${
+      active === key
+        ? "border-sun bg-sea-dark text-white"
+        : "border-transparent text-white/95 hover:bg-sea-dark hover:text-white"
+    }`;
 
   return (
-    <>
-      <nav aria-label="Navigation principale" className="flex items-center gap-1">
-        {LINKS.map(({ href, label, match }) => {
-          const active = match(pathname);
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-current={active ? "page" : undefined}
-              className={`rounded-full px-3.5 py-2 text-sm font-semibold transition hover:bg-surface ${
-                active ? "bg-brand-soft text-brand" : "text-ink"
-              }`}
-            >
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="flex items-center gap-2">
+    <ul className="no-scrollbar flex h-14 items-stretch overflow-x-auto">
+      <li className="flex">
         <Link
-          href="/pro"
-          aria-current={onPro ? "page" : undefined}
-          className={`flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition hover:bg-surface ${
-            onPro ? "border-brand text-brand" : "border-line text-ink"
-          }`}
+          href="/"
+          aria-label="Accueil"
+          aria-current={active === "home" ? "page" : undefined}
+          className={item("home")}
         >
-          <Store className="size-4" aria-hidden />
-          Espace pro
+          <House className="size-5" strokeWidth={2.4} aria-hidden />
         </Link>
-        <Link
-          href="/profil"
-          aria-label="Profil"
-          aria-current={onAccount ? "page" : undefined}
-          className={`grid size-10 place-items-center rounded-full border transition hover:bg-surface ${
-            onAccount ? "border-brand text-brand" : "border-line text-ink"
-          }`}
-        >
-          <User className="size-5" aria-hidden />
-        </Link>
-      </div>
-    </>
+      </li>
+      {ITEMS.map(({ key, href, label }) => (
+        <li key={key} className="flex items-center before:h-5 before:w-px before:bg-white/40">
+          <Link href={href} aria-current={active === key ? "page" : undefined} className={`${item(key)} h-full`}>
+            {label}
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
