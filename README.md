@@ -172,8 +172,9 @@ Le workflow `.github/workflows/ci.yml` tourne à chaque push et pull request :
 **Secrets à créer** dans GitHub > Settings > Secrets and variables > Actions :
 
 - `SUPABASE_ACCESS_TOKEN` : jeton personnel créé sur supabase.com > Account > Access Tokens ;
-- `SUPABASE_DB_PASSWORD` : mot de passe de la base (Project Settings > Database, réinitialisable) ;
-- `SUPABASE_PROJECT_ID` : identifiant du projet (la partie avant `.supabase.co`).
+- `SUPABASE_PROJECT_ID` : identifiant du projet (la partie avant `.supabase.co`) ;
+- `SUPABASE_DB_PASSWORD` (facultatif) : mot de passe de la base. Sans lui, la CLI se connecte avec un rôle temporaire
+  qu'elle crée grâce au jeton.
 
 Sans eux, le job « Migrations Supabase » échoue avec la liste des secrets manquants.
 

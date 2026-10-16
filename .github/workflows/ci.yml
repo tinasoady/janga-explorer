@@ -2,8 +2,8 @@
 #
 # Secrets à créer dans GitHub > Settings > Secrets and variables > Actions (voir README) :
 #   SUPABASE_ACCESS_TOKEN  jeton personnel : supabase.com > Account > Access Tokens
-#   SUPABASE_DB_PASSWORD   mot de passe de la base (Project Settings > Database)
 #   SUPABASE_PROJECT_ID    identifiant du projet (la partie avant .supabase.co)
+#   SUPABASE_DB_PASSWORD   facultatif : sans lui, la CLI se connecte avec un rôle temporaire créé grâce au jeton
 
 name: CI
 
@@ -67,7 +67,7 @@ jobs:
       - name: Vérifier les secrets
         run: |
           missing=""
-          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_ID; do
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_ID; do
             [ -n "${!name}" ] || missing="$missing $name"
           done
           if [ -n "$missing" ]; then
