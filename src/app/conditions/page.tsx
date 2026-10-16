@@ -72,8 +72,21 @@ export default function ConditionsPage() {
         répétée de clients ou de non-respect de ces conditions.
       </p>
       <p>
-        La publication est gratuite pendant la période de lancement, sans commission sur les ventes. Si cela devait
-        changer, les professionnels seraient prévenus à l&apos;avance et resteraient libres de fermer leur compte.
+        Chaque compte professionnel bénéficie d&apos;un essai gratuit d&apos;un mois à partir de son activation. Pour
+        continuer à publier ensuite, un abonnement est nécessaire : son prix mensuel est affiché dans l&apos;espace pro,
+        il donne droit à un nombre illimité d&apos;offres pendant la période payée et aucune commission n&apos;est prise
+        sur les ventes.
+      </p>
+      <p>
+        L&apos;abonnement se règle par MVola, Orange Money ou Airtel Money. Le professionnel déclare son paiement dans son
+        espace avec une preuve (capture d&apos;écran de la confirmation) ; la période est ajoutée dès que nous avons
+        vérifié la réception du montant. L&apos;abonnement ne se renouvelle pas tout seul : sans nouveau paiement, il prend
+        fin à son échéance. Les offres déjà en ligne restent alors visibles jusqu&apos;à leur date de fin, mais aucune
+        nouvelle offre ne peut être publiée. Un changement de prix ne s&apos;applique qu&apos;aux paiements suivants.
+      </p>
+      <p>
+        Nous pouvons annuler un abonnement dans les cas prévus au paragraphe précédent (information trompeuse, plaintes
+        répétées, non-respect de ces conditions) ; le professionnel en est informé avec le motif.
       </p>
 
       <h2>5. Responsabilité</h2>

@@ -96,7 +96,7 @@ const AUDIENCES: { icon: LucideIcon; title: string; points: string[]; cta: { hre
     points: [
       "Hôtels, restaurants, prestataires d'activités et organisateurs d'événements",
       "Remplir les tables et les chambres les jours creux",
-      "Publier une offre en quelques minutes, sans commission, gratuitement pendant le lancement",
+      "Publier des offres en quelques minutes, sans commission : un mois d'essai gratuit, puis un abonnement mensuel",
       "Être trouvé facilement grâce à la localisation Google Maps de l'offre",
     ],
     cta: { href: "/pro", label: "Publier une offre" },

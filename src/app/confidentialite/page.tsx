@@ -63,7 +63,12 @@ export default function ConfidentialitePage() {
           que le numéro WhatsApp et le téléphone de l&apos;établissement. <strong>Ces informations sont publiques</strong>{" "}
           : c&apos;est leur raison d&apos;être ;
         </li>
-        <li>vos favoris et vos alertes (catégorie, budget, mots-clés), pour les retrouver sur tous vos appareils.</li>
+        <li>vos favoris et vos alertes (catégorie, budget, mots-clés), pour les retrouver sur tous vos appareils ;</li>
+        <li>
+          pour l&apos;abonnement : les paiements que vous déclarez (moyen de paiement, numéro qui a payé, référence de la
+          transaction, montant) et la capture d&apos;écran envoyée comme preuve. Ces éléments ne sont{" "}
+          <strong>jamais publics</strong> : seuls vous et notre équipe d&apos;administration y avez accès.
+        </li>
       </ul>
 
       <h2>4. Pourquoi nous utilisons ces données</h2>
@@ -71,6 +76,7 @@ export default function ConfidentialitePage() {
         <li>vérifier que votre établissement existe avant d&apos;activer votre compte ;</li>
         <li>gérer votre compte et vous permettre de publier et modifier vos offres ;</li>
         <li>confirmer avec vous le prix et les conditions d&apos;une offre (badge « Offre vérifiée ») ;</li>
+        <li>vérifier vos paiements d&apos;abonnement et en garder la trace ;</li>
         <li>prévenir notre équipe par e-mail lorsqu&apos;une nouvelle demande de compte arrive ;</li>
         <li>assurer la sécurité du site et empêcher les abus.</li>
       </ul>
@@ -114,6 +120,10 @@ export default function ConfidentialitePage() {
         <li>
           <strong>Offres</strong> : retirées du site à leur date de fin ; elles restent visibles dans votre espace pro
           jusqu&apos;à ce que vous les supprimiez.
+        </li>
+        <li>
+          <strong>Paiements d&apos;abonnement et preuves</strong> : tant que le compte existe, pour justifier les
+          périodes payées, puis supprimés après sa fermeture.
         </li>
         <li>
           <strong>Favoris enregistrés sur votre appareil</strong> : jusqu&apos;à ce que vous les retiriez ou effaciez

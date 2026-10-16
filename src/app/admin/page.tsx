@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { CalendarDays, MapPin, MessageCircle, Pencil, Phone, Plus, Star, UserCheck, Users } from "lucide-react";
+import { CalendarDays, CreditCard, MapPin, MessageCircle, Pencil, Phone, Plus, Star, UserCheck, Users } from "lucide-react";
 import { BackButton } from "@/components/back-button";
 import { inputClass, secondaryButtonClass, Unavailable } from "@/components/form-ui";
 import { SubmitButton } from "@/components/submit-button";
@@ -62,13 +62,23 @@ async function countPendingRequests(supabase: SupabaseClient) {
   return count ?? 0;
 }
 
+/** Paiements d'abonnement déclarés par les pros, à confirmer (tous les administrateurs). */
+async function countPendingPayments(supabase: SupabaseClient) {
+  const { count } = await supabase
+    .from("subscription_payments")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending");
+  return count ?? 0;
+}
+
 async function Queue() {
   if (!isSupabaseConfigured()) return <Unavailable />;
   const { user, supabase } = await requireAdmin();
-  const [pending, published, requestCount] = await Promise.all([
+  const [pending, published, requestCount, paymentCount] = await Promise.all([
     loadItems(supabase, "pending", 100),
     loadItems(supabase, "published", 50),
     user.role === "superadmin" ? countPendingRequests(supabase) : Promise.resolve(0),
+    countPendingPayments(supabase),
   ]);
 
   return (
@@ -80,6 +90,13 @@ async function Queue() {
         >
           <Plus className="size-4" aria-hidden />
           Créer une offre
+        </Link>
+        <Link href="/admin/abonnements" className={secondaryButtonClass}>
+          <CreditCard className="size-4" aria-hidden />
+          Abonnements
+          {paymentCount > 0 && (
+            <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-white">{paymentCount}</span>
+          )}
         </Link>
         {user.role === "superadmin" && (
           <>

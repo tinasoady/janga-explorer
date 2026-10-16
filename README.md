@@ -120,6 +120,35 @@ Authentication > Attack Protection.
 
 Un compte = un établissement. Les photos sont stockées dans le bucket public `offer-images` (5 Mo, JPEG/PNG/WebP).
 
+## Abonnement des comptes pro
+
+1. **Essai gratuit** : à l'approbation de sa demande, le compte pro reçoit un essai (30 jours par défaut) pendant
+   lequel il publie autant d'offres qu'il veut. Les comptes déjà approuvés avant la migration
+   `20261016000006_subscriptions.sql` reçoivent leur essai à partir du jour où elle est appliquée.
+2. **Paiement** : depuis `/espace-pro/abonnement`, le pro choisit la durée (1, 3, 6 ou 12 mois), paie par MVola,
+   Orange Money ou Airtel Money au numéro affiché, puis déclare le paiement : numéro payeur, référence de la
+   transaction et capture d'écran de la confirmation. Le montant est calculé par la base (mois × prix en vigueur),
+   jamais par le navigateur. Un seul paiement en attente à la fois ; une même référence ne peut pas servir deux fois.
+3. **Confirmation** : tout administrateur voit les paiements à vérifier sur `/admin/abonnements` (compteur sur
+   `/admin`), contrôle la réception sur le relevé de l'opérateur, puis confirme ou refuse avec un motif. Chaque mois
+   payé ajoute 30 jours à la suite de l'accès en cours (rien n'est perdu en payant pendant l'essai ou avant
+   l'échéance).
+4. **Sans abonnement actif**, le pro ne peut plus créer d'offre ni renvoyer une offre en validation (règle RLS et
+   trigger `offers_guard`, pas seulement l'interface). Ses offres déjà en ligne restent visibles jusqu'à leur date de
+   fin, et il peut toujours les retirer.
+
+Le dashboard `/admin/abonnements` affiche les revenus confirmés (mois en cours et 6 derniers mois), les abonnés, les
+essais, les comptes qui expirent sous 7 jours (avec un bouton de relance WhatsApp) et l'historique des paiements.
+**Le superadmin** y règle en plus le prix mensuel, la durée de l'essai et les numéros de réception
+(`/admin/abonnements/tarifs`), offre des jours, annule ou réactive un abonnement.
+
+**À faire après la migration** : renseigner le prix (20 000 Ar par défaut) et au moins un numéro de réception dans
+`/admin/abonnements/tarifs`. Tant qu'aucun numéro n'est saisi, les pros ne peuvent pas déclarer de paiement.
+
+Les preuves sont stockées dans le bucket **privé** `payment-proofs` (lisible par le pro et les administrateurs, via des
+liens temporaires). Elles ne sont pas supprimées automatiquement avec un compte : les retirer à la main dans
+Supabase > Storage lors d'une fermeture de compte.
+
 ## Favoris et alertes
 
 - Les favoris restent dans le navigateur. Avec un compte connecté, ils sont aussi enregistrés sur le compte et suivent
@@ -132,12 +161,14 @@ Un compte = un établissement. Les photos sont stockées dans le bucket public `
 
 ```
 src/app/            pages : accueil, bons-plans, offres/[slug], favoris, alertes, profil, connexion, pro (présentation)
-src/app/espace-pro/ tableau de bord du professionnel : établissement, offres (créer, modifier, retirer)
-src/app/admin/      modération, création d'offres par l'admin, demandes de compte pro et équipe d'administration (superadmin)
+src/app/espace-pro/ tableau de bord du professionnel : établissement, offres (créer, modifier, retirer), abonnement
+src/app/admin/      modération, création d'offres par l'admin, abonnements et paiements, demandes de compte pro et
+                    équipe d'administration (superadmin)
 src/proxy.ts        rafraîchit la session Supabase pour les pages avec compte
 src/components/     cartes d'offres, navigation, favoris, éléments de formulaire…
 src/lib/offers.ts   accès public aux offres (Supabase ou démo), filtres et tri
 src/lib/auth.ts     session, rôles et pages protégées
+src/lib/subscription.ts  état de l'abonnement, réglages, paiements et preuves
 supabase/           migrations SQL (schéma, règles d'accès RLS) et données de démonstration
 ```
 
@@ -147,5 +178,7 @@ supabase/           migrations SQL (schéma, règles d'accès RLS) et données d
 - [x] Espace pro : connexion des établissements et publication de leurs offres
 - [x] Back-office : validation des offres (badge « Offre vérifiée »)
 - [x] Compte utilisateur, favoris synchronisés et alertes dans l'application
+- [x] Abonnement des comptes pro (Mobile Money, paiements confirmés par un admin)
+- [ ] Paiement Mobile Money confirmé automatiquement (API MVola / Orange Money)
 - [ ] Notifications des alertes (e-mail ou WhatsApp)
 - [ ] Plusieurs établissements par compte

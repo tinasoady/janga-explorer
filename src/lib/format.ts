@@ -17,6 +17,11 @@ export function todayIso(now = new Date()) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE }).format(now);
 }
 
+/** Date à Mahajanga (YYYY-MM-DD) d'un horodatage enregistré par la base. */
+export function dateOf(timestamp: string) {
+  return todayIso(new Date(timestamp));
+}
+
 export function addDaysIso(iso: string, days: number) {
   const d = new Date(`${iso}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);

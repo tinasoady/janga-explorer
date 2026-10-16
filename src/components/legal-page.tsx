@@ -10,7 +10,7 @@ export const LEGAL_PAGES = [
 ] as const;
 
 /** Date affichée en tête des pages légales : à changer à chaque modification de leur contenu. */
-const LAST_UPDATE = "15 octobre 2026";
+const LAST_UPDATE = "16 octobre 2026";
 
 /** Mise en page commune aux pages légales : titre, onglets entre les documents et texte en colonne lisible. */
 export function LegalPage({

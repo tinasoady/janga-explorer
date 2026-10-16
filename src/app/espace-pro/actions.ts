@@ -6,11 +6,14 @@ import { requireProAccess } from "@/lib/auth";
 import { removeOfferImage, uploadOfferImage } from "@/lib/offer-image";
 import { getMyBusiness, getMyOffer } from "@/lib/pro";
 import { makeSlug, parseBusiness, parseOffer } from "@/lib/pro-forms";
+import { canPublish, getMySubscription } from "@/lib/subscription";
 
 export type FormState = { error?: string; values?: Record<string, string> } | null;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const GENERIC_ERROR = "Enregistrement impossible. Réessayez dans un instant.";
+const SUBSCRIPTION_ERROR =
+  "Votre abonnement ne permet plus de publier : renouvelez-le depuis « Mon abonnement » pour envoyer cette offre.";
 
 /** Renvoie la saisie au formulaire : React vide les champs après une action, on les remplit à nouveau en cas d'erreur. */
 function echo(formData: FormData, names: string[]) {
@@ -55,6 +58,9 @@ export async function saveOffer(_prev: FormState, formData: FormData): Promise<F
   const parsed = parseOffer(formData);
   if (!parsed.ok) return { error: parsed.error, values };
   const o = parsed.value;
+
+  // Créer ou modifier une offre la (re)met en validation : il faut un abonnement actif (la base le vérifie aussi).
+  if (!canPublish(user, await getMySubscription(supabase, user.id))) return { error: SUBSCRIPTION_ERROR, values };
 
   const id = String(formData.get("id") ?? "");
   const existing = id ? await getMyOffer(supabase, business.id, UUID.test(id) ? id : "") : null;
@@ -104,7 +110,7 @@ async function ownedOfferId(formData: FormData) {
   const business = await getMyBusiness(supabase, user.id);
   const id = String(formData.get("id") ?? "");
   if (!business || !UUID.test(id)) return null;
-  return { supabase, businessId: business.id, id };
+  return { user, supabase, businessId: business.id, id };
 }
 
 export async function archiveOffer(formData: FormData) {
@@ -123,6 +129,7 @@ export async function archiveOffer(formData: FormData) {
 export async function resubmitOffer(formData: FormData) {
   const target = await ownedOfferId(formData);
   if (!target) return;
+  if (!canPublish(target.user, await getMySubscription(target.supabase, target.user.id))) redirect("/espace-pro/abonnement");
   await target.supabase
     .from("offers")
     .update({ status: "pending" })

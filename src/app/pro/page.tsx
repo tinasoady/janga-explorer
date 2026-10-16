@@ -33,7 +33,7 @@ const STEPS = [
 ];
 
 const BENEFITS = [
-  { icon: Wallet, text: "Gratuit pendant le lancement, sans commission sur vos ventes." },
+  { icon: Wallet, text: "Un mois d'essai gratuit, puis un abonnement mensuel payable par Mobile Money : offres illimitées, sans commission sur vos ventes." },
   { icon: MessageCircle, text: "Les clients vous écrivent sur WhatsApp ou vous appellent : pas d'intermédiaire." },
 ];
 

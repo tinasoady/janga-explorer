@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
-import { CalendarDays, Clock, Pencil, Plus, Store, XCircle } from "lucide-react";
+import { CalendarDays, Clock, Lock, Pencil, Plus, Store, XCircle } from "lucide-react";
 import { BackButton } from "@/components/back-button";
 import { secondaryButtonClass, Unavailable } from "@/components/form-ui";
 import { SubmitButton } from "@/components/submit-button";
@@ -12,8 +12,10 @@ import { STATUS_LABEL, type ManagedOffer } from "@/lib/managed";
 import { getToday } from "@/lib/offers";
 import { getMyBusiness, getMyOffers, getMyProRequest, type MyProRequest } from "@/lib/pro";
 import { proKindLabel } from "@/lib/pro-request";
+import { canPublish, getMySubscription, type Subscription } from "@/lib/subscription";
 import { isSupabaseConfigured } from "@/lib/supabase-server";
 import { archiveOffer, deleteOffer, resubmitOffer } from "./actions";
+import { SubscriptionStatus } from "./subscription-status";
 
 export const metadata: Metadata = { title: "Mon espace pro" };
 
@@ -47,11 +49,17 @@ async function Dashboard() {
   // Compte pro pas encore approuvé : on montre où en est la demande plutôt que le tableau de bord.
   if (!hasProAccess(user)) return <RequestStatus request={await getMyProRequest(supabase, user.id)} />;
 
-  const business = await getMyBusiness(supabase, user.id);
+  const [business, subscription] = await Promise.all([
+    getMyBusiness(supabase, user.id),
+    getMySubscription(supabase, user.id),
+  ]);
+  const publishable = canPublish(user, subscription);
+  const banner = subscription && <SubscriptionStatus subscription={subscription} compact />;
 
   if (!business) {
     return (
       <div className="space-y-4 px-5 pb-8">
+        {banner}
         <div className="rounded-2xl bg-surface p-6 text-center">
           <Store className="mx-auto size-10 text-brand" aria-hidden />
           <p className="mt-3 font-bold">Présentez votre établissement</p>
@@ -74,6 +82,8 @@ async function Dashboard() {
 
   return (
     <div className="space-y-5 px-5 pb-8">
+      {banner}
+
       <section className="flex items-start gap-3 rounded-2xl border border-line p-4">
         <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand">
           <Store className="size-5" aria-hidden />
@@ -87,13 +97,17 @@ async function Dashboard() {
         </Link>
       </section>
 
-      <Link
-        href="/espace-pro/offres/nouvelle"
-        className="flex items-center justify-center gap-2 rounded-full bg-brand py-3 font-bold text-white shadow-md shadow-brand/30"
-      >
-        <Plus className="size-5" aria-hidden />
-        Publier une offre
-      </Link>
+      {publishable ? (
+        <Link
+          href="/espace-pro/offres/nouvelle"
+          className="flex items-center justify-center gap-2 rounded-full bg-brand py-3 font-bold text-white shadow-md shadow-brand/30"
+        >
+          <Plus className="size-5" aria-hidden />
+          Publier une offre
+        </Link>
+      ) : (
+        <PublishLocked subscription={subscription} />
+      )}
 
       <section>
         <h2 className="text-lg font-extrabold">Mes offres</h2>
@@ -105,12 +119,38 @@ async function Dashboard() {
           <ul className="mt-3 space-y-3">
             {offers.map((offer) => (
               <li key={offer.id}>
-                <OfferItem offer={offer} today={today} />
+                <OfferItem offer={offer} today={today} publishable={publishable} />
               </li>
             ))}
           </ul>
         )}
       </section>
+    </div>
+  );
+}
+
+/** Remplace le bouton « Publier une offre » quand l'abonnement ne permet plus de publier. */
+function PublishLocked({ subscription }: { subscription: Subscription | null }) {
+  const canceled = !subscription || subscription.status === "canceled";
+  return (
+    <div className="space-y-2 rounded-2xl bg-surface p-4 text-center">
+      <p className="flex items-center justify-center gap-2 font-bold">
+        <Lock className="size-4" aria-hidden />
+        Publication en pause
+      </p>
+      <p className="text-sm text-muted">
+        {canceled
+          ? "Votre abonnement est annulé. Contactez Janga Explorer pour le réactiver."
+          : "Abonnez-vous pour publier de nouvelles offres, en nombre illimité."}
+      </p>
+      {!canceled && (
+        <Link
+          href="/espace-pro/abonnement"
+          className="inline-block rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-white"
+        >
+          M&apos;abonner
+        </Link>
+      )}
     </div>
   );
 }
@@ -178,9 +218,9 @@ function RequestStatus({ request }: { request: MyProRequest | null }) {
   );
 }
 
-function OfferItem({ offer, today }: { offer: ManagedOffer; today: string }) {
+function OfferItem({ offer, today, publishable }: { offer: ManagedOffer; today: string; publishable: boolean }) {
   const expired = offer.status === "published" && offer.validUntil < today;
-  const canResubmit = offer.status === "archived" || offer.status === "rejected";
+  const canResubmit = publishable && (offer.status === "archived" || offer.status === "rejected");
   const canArchive = offer.status === "published" || offer.status === "pending";
 
   return (

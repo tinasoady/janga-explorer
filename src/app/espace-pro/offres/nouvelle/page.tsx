@@ -6,6 +6,7 @@ import { Unavailable } from "@/components/form-ui";
 import { requireProAccess } from "@/lib/auth";
 import { getToday } from "@/lib/offers";
 import { getMyBusiness } from "@/lib/pro";
+import { canPublish, getMySubscription } from "@/lib/subscription";
 import { isSupabaseConfigured } from "@/lib/supabase-server";
 import { OfferForm } from "../../offer-form";
 
@@ -28,7 +29,9 @@ export default function NouvelleOffrePage() {
 async function Content() {
   if (!isSupabaseConfigured()) return <Unavailable />;
   const { user, supabase } = await requireProAccess("/espace-pro/offres/nouvelle");
-  if (!(await getMyBusiness(supabase, user.id))) redirect("/espace-pro/etablissement");
+  const [business, subscription] = await Promise.all([getMyBusiness(supabase, user.id), getMySubscription(supabase, user.id)]);
+  if (!business) redirect("/espace-pro/etablissement");
+  if (!canPublish(user, subscription)) redirect("/espace-pro/abonnement");
 
   return (
     <div className="px-5 pb-8">
