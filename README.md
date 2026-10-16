@@ -157,6 +157,32 @@ Supabase > Storage lors d'une fermeture de compte.
   ligne depuis la dernière visite. Elle s'affiche dans l'application : **aucune notification n'est envoyée** (e-mail ou
   WhatsApp), ce qui demanderait un service d'envoi.
 
+## Intégration continue (GitHub Actions)
+
+Le workflow `.github/workflows/ci.yml` tourne à chaque push et pull request :
+
+| Job | Quand | Ce qu'il fait |
+|---|---|---|
+| Lint, types et build | toujours | `npm run lint`, TypeScript, `npm run build` (en mode démonstration, sans Supabase) |
+| Tests SQL des migrations | toujours | `npm run db:test` : rejoue toutes les migrations dans PGlite (Postgres embarqué) et vérifie les règles d'accès de l'abonnement |
+| Migrations Supabase | push sur `main` | `supabase db push` sur la base de production, après les tests SQL |
+
+`npm run db:test` se lance aussi en local, sans Docker ni base Supabase. Le test est dans `supabase/tests/`.
+
+**Secrets à créer** dans GitHub > Settings > Secrets and variables > Actions :
+
+- `SUPABASE_ACCESS_TOKEN` : jeton personnel créé sur supabase.com > Account > Access Tokens ;
+- `SUPABASE_DB_PASSWORD` : mot de passe de la base (Project Settings > Database, réinitialisable) ;
+- `SUPABASE_PROJECT_ID` : identifiant du projet (la partie avant `.supabase.co`).
+
+Sans eux, le job « Migrations Supabase » échoue avec la liste des secrets manquants.
+
+**Ordre migration / déploiement.** Vercel déploie `main` de son côté, en même temps que le workflow : une migration
+peut donc arriver une minute après le nouveau code. Pour une migration dont le code dépend (nouvelle table, nouvelle
+colonne lue par les pages), l'appliquer d'abord (`npm run db:push`, ou un premier commit qui ne contient que la
+migration), puis pousser le code. Une migration ne doit jamais casser le code déjà en ligne : ajouter des colonnes ou
+des tables, ne pas en supprimer ni en renommer dans le même déploiement.
+
 ## Structure
 
 ```
@@ -169,7 +195,8 @@ src/components/     cartes d'offres, navigation, favoris, éléments de formulai
 src/lib/offers.ts   accès public aux offres (Supabase ou démo), filtres et tri
 src/lib/auth.ts     session, rôles et pages protégées
 src/lib/subscription.ts  état de l'abonnement, réglages, paiements et preuves
-supabase/           migrations SQL (schéma, règles d'accès RLS) et données de démonstration
+supabase/           migrations SQL (schéma, règles d'accès RLS), tests SQL et données de démonstration
+.github/workflows/  intégration continue : vérifications, tests SQL, migrations de production
 ```
 
 ## Feuille de route
