@@ -44,8 +44,10 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-6xl grid-cols-4 gap-8 px-8 py-12 text-sm lg:grid-cols-[1.3fr_repeat(4,1fr)] lg:px-12">
         <div className="col-span-4 lg:col-span-1">
           <p className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-white">
-            <LogoMark />
-            Janga Explorer
+            <LogoMark variant="dark" />
+            <span>
+              Janga <span className="text-brand">Explorer</span>
+            </span>
           </p>
           <p className="mt-3 max-w-xs leading-relaxed">Les bons plans de Mahajanga, au bon moment.</p>
           <p className="mt-5 font-display text-base font-semibold tracking-wide text-white uppercase">Nous contacter</p>

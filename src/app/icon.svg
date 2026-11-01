@@ -1,14 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
-  <!-- Logo Janga Explorer (soleil levant sur la mer) sur fond blanc, lisible sur les onglets clairs comme sombres -->
-  <rect width="40" height="40" rx="9" fill="#fff"/>
-  <g stroke="#ffb020" stroke-width="2.8" stroke-linecap="round">
-    <line x1="20" y1="4.5" x2="20" y2="8.5"/>
-    <line x1="9" y1="9" x2="11.8" y2="11.8"/>
-    <line x1="31" y1="9" x2="28.2" y2="11.8"/>
-    <line x1="4.5" y1="20" x2="8.5" y2="20"/>
-    <line x1="31.5" y1="20" x2="35.5" y2="20"/>
-  </g>
-  <path d="M9.5 22.5a10.5 10.5 0 0 1 21 0Z" fill="#ff6a3d"/>
-  <path d="M4.5 27c3.8 0 3.8-2.6 7.8-2.6S16.2 27 20 27s3.8-2.6 7.8-2.6S31.7 27 35.5 27" fill="none" stroke="#0b8fd6" stroke-width="3.2" stroke-linecap="round"/>
-  <path d="M7 33.2c3.3 0 3.3-2.4 6.5-2.4s3.3 2.4 6.5 2.4 3.3-2.4 6.5-2.4 3.3 2.4 6.5 2.4" fill="none" stroke="#0e2a47" stroke-width="3.2" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 1 100 100">
+  <!-- Icône Janga Explorer : épingle dont la pointe prolonge le tronc du baobab, liseré blanc pour les onglets sombres -->
+  <path d="M17 40 A33 33 0 0 1 83 40 C83 60 63 75 50 96 C37 75 17 60 17 40 Z" fill="#fff" stroke="#fff" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M17 40 A33 33 0 0 1 83 40 C83 60 63 75 50 96 C37 75 17 60 17 40 Z" fill="#0e2a47"/>
+  <circle cx="50" cy="40" r="25.5" fill="#ffb020"/>
+  <circle cx="65" cy="43.5" r="9" fill="#ff6a3d"/>
+  <path d="M24.6 46 Q37 40.5 50 46 T75.4 46 A25.5 25.5 0 0 1 24.6 46 Z" fill="#0b8fd6"/>
+  <path d="M28 54 Q33.5 51 39 54" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M61 54 Q66.5 51 72 54" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M47.2 31 C45.6 38 42.4 46 42.2 56 C42.1 60.5 42.4 64 42.5 67 L57.5 67 C57.6 64 57.9 60.5 57.8 56 C57.6 46 54.4 38 52.8 31 Z" fill="#0e2a47"/>
+  <g stroke="#0e2a47" stroke-width="3" stroke-linecap="round" fill="none"><path d="M50 33 L38.5 26"/><path d="M50 33 L44.5 22"/><path d="M50 33 L55.5 22"/><path d="M50 33 L61.5 26"/></g>
+  <g fill="#0e2a47"><ellipse cx="37.5" cy="25.2" rx="5" ry="2.3"/><ellipse cx="44" cy="21.4" rx="4.4" ry="2.2"/><ellipse cx="56" cy="21.4" rx="4.4" ry="2.2"/><ellipse cx="62.5" cy="25.2" rx="5" ry="2.3"/></g>
 </svg>

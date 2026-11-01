@@ -1,19 +1,26 @@
 import Link from "next/link";
 
-export function LogoMark({ className = "size-9" }: { className?: string }) {
+/**
+ * Icône Janga Explorer : une épingle de carte dont la pointe prolonge le tronc du baobab, devant le soleil
+ * couchant sur la mer. `dark` passe l'épingle et le baobab en blanc pour les fonds bleu nuit.
+ */
+export function LogoMark({ className = "size-9", variant = "light" }: { className?: string; variant?: "light" | "dark" }) {
+  const pin = variant === "dark" ? "#fff" : "#0e2a47";
   return (
-    <svg viewBox="0 0 40 40" className={className} aria-hidden>
-      {/* soleil levant sur la mer */}
-      <g stroke="#ffb020" strokeWidth="2.4" strokeLinecap="round">
-        <line x1="20" y1="3" x2="20" y2="7" />
-        <line x1="8" y1="8" x2="10.8" y2="10.8" />
-        <line x1="32" y1="8" x2="29.2" y2="10.8" />
-        <line x1="3" y1="20" x2="7" y2="20" />
-        <line x1="33" y1="20" x2="37" y2="20" />
+    <svg viewBox="0 0 100 100" className={className} aria-hidden>
+      <path d="M17 40A33 33 0 0 1 83 40C83 60 63 75 50 96 37 75 17 60 17 40Z" fill={pin} />
+      <circle cx="50" cy="40" r="25.5" fill="#ffb020" />
+      <circle cx="65" cy="43.5" r="9" fill="#ff6a3d" />
+      <path d="M24.6 46Q37 40.5 50 46T75.4 46A25.5 25.5 0 0 1 24.6 46Z" fill="#0b8fd6" />
+      <path d="M28 54Q33.5 51 39 54M61 54Q66.5 51 72 54" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M47.2 31C45.6 38 42.4 46 42.2 56 42.1 60.5 42.4 64 42.5 67H57.5C57.6 64 57.9 60.5 57.8 56 57.6 46 54.4 38 52.8 31Z" fill={pin} />
+      <path d="M50 33 38.5 26M50 33 44.5 22M50 33 55.5 22M50 33 61.5 26" stroke={pin} strokeWidth="3" strokeLinecap="round" />
+      <g fill={pin}>
+        <ellipse cx="37.5" cy="25.2" rx="5" ry="2.3" />
+        <ellipse cx="44" cy="21.4" rx="4.4" ry="2.2" />
+        <ellipse cx="56" cy="21.4" rx="4.4" ry="2.2" />
+        <ellipse cx="62.5" cy="25.2" rx="5" ry="2.3" />
       </g>
-      <path d="M9 22a11 11 0 0 1 22 0Z" fill="#ff6a3d" />
-      <path d="M3 26c4 0 4-2.5 8.5-2.5S16 26 20 26s4.5-2.5 8.5-2.5S33 26 37 26" fill="none" stroke="#0b8fd6" strokeWidth="2.6" strokeLinecap="round" />
-      <path d="M6 32c3.5 0 3.5-2.3 7-2.3s3.5 2.3 7 2.3 3.5-2.3 7-2.3 3.5 2.3 7 2.3" fill="none" stroke="#0e2a47" strokeWidth="2.6" strokeLinecap="round" />
     </svg>
   );
 }
@@ -28,7 +35,7 @@ export function Logo({ size = "md" }: { size?: keyof typeof SIZES }) {
     <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Janga Explorer, accueil">
       <LogoMark className={SIZES[size].mark} />
       <span className={`${SIZES[size].text} font-extrabold tracking-tight whitespace-nowrap text-ink`}>
-        Janga <span className="text-sea">Explorer</span>
+        Janga <span className="text-brand-dark">Explorer</span>
       </span>
     </Link>
   );
