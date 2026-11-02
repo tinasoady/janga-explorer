@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { Bell, ChevronRight, Heart, Info, LogOut, ShieldCheck, Store, UserRound } from "lucide-react";
 import { ContactLinks } from "@/components/contact-links";
 import { FavoritesSync } from "@/components/favorites-sync";
+import { InstallAppCard } from "@/components/install-app";
 import { LEGAL_PAGES } from "@/components/legal-page";
 import { secondaryButtonClass } from "@/components/form-ui";
 import { LogoMark } from "@/components/logo";
@@ -32,6 +33,8 @@ export default function ProfilPage() {
         <Suspense fallback={<div className="h-24 animate-pulse rounded-2xl bg-surface" aria-hidden />}>
           <Account />
         </Suspense>
+
+        <InstallAppCard />
 
         <section className="space-y-2 text-sm text-muted">
           <p className="flex items-center gap-2 font-bold text-ink">
