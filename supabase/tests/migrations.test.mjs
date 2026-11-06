@@ -264,5 +264,24 @@ await one(S, `select public.review_pro_request('${P}', true)`);
 const reTrial = await one(null, `select trial_ends_at < now() past from public.subscriptions where user_id = '${P}'`);
 check("re-approval keeps old trial", reTrial.past === true);
 
+// Offres d'exemple : publiées, marquées, protégées des pros, prolongées et supprimées en bloc
+const samples = await one(null, `select count(*)::int n, bool_and(o.status = 'published') published
+  from public.offers o join public.businesses b on b.id = o.business_id where b.is_sample`);
+check("48 sample offers published", samples.n === 48 && samples.published === true, JSON.stringify(samples));
+check("few sample offers are new", Number((await one(null, `select count(*) n from public.offers where published_at > now() - interval '2 days 1 hour'`)).n) < 15);
+const fakeSample = await as(P, `insert into public.businesses (name, kind, owner_id, is_sample) values ('Faux', 'Resto', '${P}', true)`);
+check("pro cannot create a sample business", !!fakeSample.error, fakeSample.error);
+await as(Q, `update public.businesses set is_sample = true where owner_id = '${Q}'`);
+check("pro cannot mark own business as sample", (await one(null, `select is_sample s from public.businesses where owner_id = '${Q}'`)).s === false);
+check("pro cannot extend samples", !!(await as(P, "select public.extend_sample_offers(30)")).error);
+const realBefore = (await one(null, `select valid_until v from public.offers where id = '${offQ}'`)).v;
+const extended = await one(A, "select public.extend_sample_offers(30) n");
+check("admin extends sample offers", extended?.n === 48, JSON.stringify(extended));
+check("real offers not extended", (await one(null, `select valid_until v from public.offers where id = '${offQ}'`)).v.getTime() === realBefore.getTime());
+check("admin cannot delete samples", !!(await as(A, "select public.delete_sample_content()")).error);
+check("superadmin deletes samples", (await one(S, "select public.delete_sample_content() n"))?.n === 48);
+const left = await one(null, `select (select count(*) from public.businesses where is_sample)::int b, (select count(*) from public.offers where id = '${offQ}')::int real`);
+check("samples gone, real offers kept", left.b === 0 && left.real === 1, JSON.stringify(left));
+
 console.log(failures ? `\n${failures} FAILURE(S)` : "\nALL PASS");
 process.exit(failures ? 1 : 0);
