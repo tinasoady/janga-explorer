@@ -166,6 +166,30 @@ const extraPay = await as(Q, `insert into public.subscription_payments (user_id,
   values ('${Q}', 'offer', '${draftId}', 1, 0, 'mvola', '0341234567', 'PASS-3', '${Q}/o3.png') returning days`);
 check("extension pays only the extra days", extraPay.rows?.[0]?.days === 5, extraPay.error ?? JSON.stringify(extraPay.rows));
 
+// Billetterie : tarifs valides acceptés, forme invalide refusée, changement de tarif renvoyé en validation
+const tiers = (json) => offerSql(bizQ, `concert-${Math.random().toString(36).slice(2, 7)}`)
+  .replace("valid_until, status)", "valid_until, status, ticket_tiers)")
+  .replace("'pending')", `'draft', '${json}'::jsonb)`);
+const goodTiers = await as(Q, tiers('[{"label":"Normal","presale":10000,"door":15000},{"label":"VIP","presale":null,"door":40000}]'));
+check("valid ticket tiers accepted", !!goodTiers.rows, goodTiers.error);
+for (const [label, json] of [
+  ["tier without price", '[{"label":"Normal"}]'],
+  ["tier without label", '[{"presale":10000}]'],
+  ["negative price", '[{"label":"Normal","door":-5}]'],
+  ["text price", '[{"label":"Normal","door":"gratuit"}]'],
+  ["empty list", "[]"],
+  ["seven tiers", JSON.stringify(Array.from({ length: 7 }, (_, i) => ({ label: `T${i}`, door: 1000 })))],
+]) {
+  const bad = await as(Q, tiers(json));
+  check(`invalid tiers refused: ${label}`, !!bad.error, bad.error);
+}
+const presaleAlone = await as(Q, offerSql(bizQ, "presale-seul").replace("valid_until, status)", "valid_until, status, presale_until)").replace("'pending')", "'draft', current_date + 2)"));
+check("presale date needs tiers", !!presaleAlone.error, presaleAlone.error);
+const tiersId = goodTiers.rows[0].id;
+await as(A, `update public.offers set status = 'published', pass_until = valid_until where id = '${tiersId}'`);
+const retier = await as(Q, `update public.offers set ticket_tiers = '[{"label":"Normal","door":12000}]' where id = '${tiersId}' returning status`);
+check("changing tiers sends offer back to review", retier.rows?.[0]?.status === "pending", retier.error ?? JSON.stringify(retier.rows));
+
 // Statistiques : comptées pour les offres en ligne, lues par leur propriétaire
 async function asAnon(sql) {
   await db.exec("set role anon;");
