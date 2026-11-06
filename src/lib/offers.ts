@@ -13,6 +13,7 @@ type BusinessRow = {
   phone: string | null;
   rating: number | null;
   review_count: number;
+  is_sample?: boolean; // absent tant que la migration 20261106000009 n'est pas appliquée
 };
 
 type OfferRow = {
@@ -73,6 +74,7 @@ function toOffer(row: OfferRow, today: string): Offer | null {
       phone: row.business.phone,
       rating: row.business.rating,
       reviewCount: row.business.review_count,
+      isSample: row.business.is_sample ?? false,
     },
   }, today);
 }

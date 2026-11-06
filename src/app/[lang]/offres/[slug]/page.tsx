@@ -7,7 +7,7 @@ import { BackButton } from "@/components/back-button";
 import { CategoryIcon } from "@/components/category";
 import { FavoriteButton } from "@/components/favorite-button";
 import { WhatsAppIcon } from "@/components/contact-links";
-import { DiscountBadge, HighlightBadge } from "@/components/offer-card";
+import { DiscountBadge, HighlightBadge, SampleTag } from "@/components/offer-card";
 import { TrackedLink, TrackOfferView } from "@/components/offer-tracking";
 import {
   formatAriary,
@@ -53,6 +53,8 @@ const T = messages({
       "Cette offre n'a pas encore été vérifiée par Janga Explorer. Confirmez le prix et les conditions avec l'établissement avant de vous déplacer.",
     message: (title: string, price: string) =>
       `Bonjour, j'ai vu votre offre « ${title} » à ${price} sur Janga Explorer. Est-elle toujours disponible ?`,
+    sampleNotice:
+      "Offre d'exemple : cet établissement et ses numéros sont fictifs. Ils montrent à quoi ressembleront les offres sur Janga Explorer.",
   },
   en: {
     notFound: "Deal not found",
@@ -84,6 +86,8 @@ const T = messages({
       "Janga Explorer hasn't verified this deal yet. Check the price and conditions with the business before you go.",
     message: (title: string, price: string) =>
       `Hello, I saw your deal "${title}" at ${price} on Janga Explorer. Is it still available?`,
+    sampleNotice:
+      "Sample deal: this business and its phone numbers are fictitious. They show what deals will look like on Janga Explorer.",
   },
 });
 
@@ -151,6 +155,7 @@ async function OfferDetails({ params }: { params: Promise<{ slug: string }> }) {
             <span>
               {offer.business.kind} · <span className="font-semibold text-ink">{offer.business.name}</span>
             </span>
+            {offer.business.isSample && <SampleTag className="mt-0.5" />}
           </p>
           {offer.business.rating !== null && (
             <p className="flex items-center gap-1 text-sm">
@@ -214,6 +219,13 @@ async function OfferDetails({ params }: { params: Promise<{ slug: string }> }) {
         </dl>
 
         <p className="leading-relaxed text-ink/90">{offer.description}</p>
+
+        {offer.business.isSample && (
+          <p className="flex gap-2 rounded-xl bg-sun/15 p-3 text-xs text-ink">
+            <Info className="size-4 shrink-0 text-sun" aria-hidden />
+            {t.sampleNotice}
+          </p>
+        )}
 
         <div className="space-y-3">
           {offer.business.whatsapp && (

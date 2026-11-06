@@ -14,8 +14,20 @@ import { FavoriteButton } from "./favorite-button";
 import { useLocale } from "./locale-provider";
 
 const T = messages({
-  fr: { verified: "Offre vérifiée", until: (date: string) => `Valable jusqu'au ${date}`, from: "dès" },
-  en: { verified: "Verified deal", until: (date: string) => `Valid until ${date}`, from: "from" },
+  fr: {
+    verified: "Offre vérifiée",
+    until: (date: string) => `Valable jusqu'au ${date}`,
+    from: "dès",
+    sample: "Exemple",
+    sampleTitle: "Offre d'exemple : établissement fictif",
+  },
+  en: {
+    verified: "Verified deal",
+    until: (date: string) => `Valid until ${date}`,
+    from: "from",
+    sample: "Sample",
+    sampleTitle: "Sample deal: fictitious business",
+  },
 });
 
 const BADGE_SIZES = {
@@ -91,6 +103,19 @@ function Prices({ offer }: { offer: Offer }) {
   );
 }
 
+/** Étiquette des offres d'exemple (établissements fictifs ajoutés pour présenter le site). */
+export function SampleTag({ className = "" }: { className?: string }) {
+  const t = T[useLocale()];
+  return (
+    <span
+      title={t.sampleTitle}
+      className={`shrink-0 rounded bg-surface px-1.5 py-px text-[10px] font-bold tracking-wide text-muted uppercase ${className}`}
+    >
+      {t.sample}
+    </span>
+  );
+}
+
 function ValidUntil({ offer }: { offer: Offer }) {
   const locale = useLocale();
   return (
@@ -126,6 +151,7 @@ export function OfferCard({ offer, today }: { offer: Offer; today?: string }) {
         <p className="flex items-center gap-1.5 text-xs text-ink/80">
           <CategoryIcon category={offer.category} />
           <span className="line-clamp-1">{offer.business.name}</span>
+          {offer.business.isSample && <SampleTag />}
         </p>
         <Prices offer={offer} />
         <ValidUntil offer={offer} />
@@ -153,6 +179,7 @@ export function OfferRow({ offer, today }: { offer: Offer; today?: string }) {
         <p className="flex items-center gap-1.5 text-xs text-ink/80">
           <CategoryIcon category={offer.category} />
           <span className="truncate">{offer.business.name}</span>
+          {offer.business.isSample && <SampleTag />}
         </p>
         <p className="flex items-center gap-1.5 text-[11px] text-muted">
           <MapPin className="size-3.5 shrink-0" aria-hidden />

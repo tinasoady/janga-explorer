@@ -233,7 +233,7 @@ const offers: DemoOffer[] = [
     slug: "menu-duo-bord-de-mer",
     title: "Menu duo au bord de mer",
     description:
-      "Profitez d'un moment gourmand face à l'océan avec ce menu duo composé de poissons frais et de spécialités locales. Une expérience unique dans un cadre exceptionnel !",
+      "Menu pour deux en terrasse face à la mer : poisson grillé du jour ou cari de crevettes, riz coco, dessert et une boisson chacun.",
     category: "manger",
     imageUrl: unsplash("1559339352-11d035aa65de"),
     priceOriginal: 50000,
@@ -251,7 +251,7 @@ const offers: DemoOffer[] = [
     slug: "nuit-bungalow-vue-mer",
     title: "Nuit en bungalow vue mer",
     description:
-      "Une nuit dans un bungalow face à la mer, petit-déjeuner inclus, avec accès libre à la piscine. Idéal pour une escapade en amoureux sans quitter Mahajanga.",
+      "Une nuit pour deux dans un bungalow face à la mer, petit-déjeuner inclus, avec accès libre à la piscine.",
     category: "dormir",
     imageUrl: unsplash("1520250497591-112f2f40a3f4"),
     priceOriginal: 120000,
@@ -287,7 +287,7 @@ const offers: DemoOffer[] = [
     slug: "diner-romantique",
     title: "Dîner romantique",
     description:
-      "Entrée, plat et dessert pour deux, servis en terrasse à la lueur des bougies. Le chef propose une carte de saison mettant à l'honneur les produits de la région Boeny.",
+      "Entrée, plat et dessert pour deux, servis en terrasse aux bougies. La carte change avec la saison et utilise des produits de la région Boeny.",
     category: "manger",
     imageUrl: unsplash("1414235077428-338989a2e8c0"),
     priceOriginal: 80000,
@@ -305,7 +305,7 @@ const offers: DemoOffer[] = [
     slug: "plateau-fruits-de-mer",
     title: "Plateau fruits de mer à partager",
     description:
-      "Crevettes, calamars, poisson du jour et crabe, accompagnés de riz coco et de sauces maison. Le plateau idéal pour un déjeuner entre amis.",
+      "Crevettes, calamars, poisson du jour et crabe, avec riz coco et sauces maison.",
     category: "manger",
     imageUrl: unsplash("1615141982883-c7ad0e69fd62"),
     priceOriginal: 120000,
@@ -774,8 +774,8 @@ const offers: DemoOffer[] = [
   },
   {
     id: "o-33",
-    slug: "bapteme-plongee",
-    title: "Baptême de plongée",
+    slug: "plongee-decouverte-bateau",
+    title: "Plongée découverte en bateau",
     description: "Première plongée avec un moniteur, jusqu'à 6 mètres de profondeur. Équipement complet, briefing et sortie en bateau compris.",
     category: "activites",
     imageUrl: unsplash("1530053969600-caed2596d242"),

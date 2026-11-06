@@ -28,6 +28,23 @@ const T = messages({
 
 type ExistingOffer = { id: string; status: string; is_verified: boolean; verified_at: string | null };
 
+/** Repousse de 30 jours la fin de toutes les offres d'exemple (elles restent visibles pour les présentations). */
+export async function extendSamples() {
+  const { supabase } = await requireAdmin();
+  await supabase.rpc("extend_sample_offers", { extra_days: 30 });
+  updateTag("offers");
+  refresh();
+}
+
+/** Supprime définitivement les établissements et offres d'exemple. Superadmin seulement, case de confirmation cochée. */
+export async function deleteSamples(formData: FormData) {
+  const { user, supabase } = await requireAdmin();
+  if (user.role !== "superadmin" || formData.get("confirm") !== "on") return;
+  await supabase.rpc("delete_sample_content");
+  updateTag("offers");
+  refresh();
+}
+
 /** Applique une décision de modération. Chaque action revérifie le rôle admin : elle est appelable en POST direct. */
 async function moderate(formData: FormData, patch: Record<string, unknown>) {
   const { supabase } = await requireAdmin();

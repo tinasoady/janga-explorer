@@ -176,6 +176,18 @@ Les preuves sont stockées dans le bucket **privé** `payment-proofs` (lisible p
 liens temporaires). Elles ne sont pas supprimées automatiquement avec un compte : les retirer à la main dans
 Supabase > Storage lors d'une fermeture de compte.
 
+## Offres d'exemple (avant le lancement public)
+
+La migration `20261106000009_sample_offers.sql` met en ligne 48 offres fictives de 23 établissements inventés, pour
+montrer le site rempli. Leurs établissements ont `is_sample = true` : le site leur ajoute une étiquette « Exemple » (et
+un avertissement sur la fiche), et l'administration les regroupe dans une section à part, hors de la file de modération.
+Depuis `/admin` :
+
+- **Prolonger de 30 jours** (administrateurs) : les dates des exemples sont relatives au jour de la migration, ils
+  expirent donc au fil des semaines ;
+- **Supprimer tous les exemples** (superadmin, case de confirmation) : à faire le jour du lancement public. Les vraies
+  offres ne sont pas touchées.
+
 ## Démonstration (offres fictives)
 
 `src/data/demo-offers.ts` contient une cinquantaine d'offres fictives (établissements, prix et numéros inventés,

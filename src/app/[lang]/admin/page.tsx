@@ -18,7 +18,15 @@ import {
 import { messages, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 import { isSupabaseConfigured } from "@/lib/supabase-server";
-import { publishUnverified, publishVerified, rejectOffer, toggleFeatured, unpublishOffer } from "./actions";
+import {
+  deleteSamples,
+  extendSamples,
+  publishUnverified,
+  publishVerified,
+  rejectOffer,
+  toggleFeatured,
+  unpublishOffer,
+} from "./actions";
 
 const TITLES = {
   fr: { meta: "Administration", heading: "Administration" },
@@ -59,6 +67,13 @@ const T = messages({
     publishVerified: "Publier · vérifiée",
     publishPlain: "Publier sans badge",
     reject: "Refuser",
+    samples: (n: number) => `Offres d'exemple (${n})`,
+    samplesText:
+      "Établissements et offres fictifs, ajoutés pour présenter le site. Ils portent l'étiquette « Exemple » et n'apparaissent pas dans les listes ci-dessous. Supprimez-les le jour du lancement public.",
+    samplesList: "Voir la liste",
+    extend: "Prolonger de 30 jours",
+    confirmDelete: "Je confirme la suppression définitive des exemples",
+    deleteAll: "Supprimer tous les exemples",
   },
   en: {
     create: "Create a deal",
@@ -89,6 +104,13 @@ const T = messages({
     publishVerified: "Publish · verified",
     publishPlain: "Publish without badge",
     reject: "Reject",
+    samples: (n: number) => `Sample deals (${n})`,
+    samplesText:
+      "Fictitious businesses and deals, added to show off the site. They carry a \"Sample\" tag and don't appear in the lists below. Delete them on public launch day.",
+    samplesList: "See the list",
+    extend: "Extend by 30 days",
+    confirmDelete: "I confirm the samples will be permanently deleted",
+    deleteAll: "Delete all samples",
   },
 });
 
@@ -112,12 +134,17 @@ export default async function AdminPage() {
   );
 }
 
-async function loadItems(supabase: SupabaseClient, status: "pending" | "published", limit: number) {
+/**
+ * Offres d'un statut. `samples` : seulement les offres d'exemple (établissements fictifs), ou seulement les vraies ;
+ * les exemples ont leur propre section pour ne pas noyer la modération.
+ */
+async function loadItems(supabase: SupabaseClient, status: "pending" | "published", limit: number, samples = false) {
   const { data, error } = await supabase
     .from("offers")
-    .select("*, business:businesses(id, name, kind, whatsapp, phone)")
+    .select("*, business:businesses!inner(id, name, kind, whatsapp, phone)")
     .eq("status", status)
-    .order("created_at", { ascending: status === "pending" }) // les plus anciennes d'abord dans la file d'attente
+    .eq("business.is_sample", samples)
+    .order(samples ? "valid_until" : "created_at", { ascending: status === "pending" || samples }) // file : les plus anciennes d'abord
     .limit(limit)
     .returns<ModerationRow[]>();
   if (error) throw new Error(`Chargement impossible : ${error.message}`);
@@ -151,9 +178,10 @@ async function Queue() {
   const { user, supabase } = await requireAdmin();
   const locale = await getLocale();
   const t = T[locale];
-  const [pending, published, requestCount, paymentCount] = await Promise.all([
+  const [pending, published, samples, requestCount, paymentCount] = await Promise.all([
     loadItems(supabase, "pending", 100),
     loadItems(supabase, "published", 50),
+    loadItems(supabase, "published", 200, true),
     user.role === "superadmin" ? countPendingRequests(supabase) : Promise.resolve(0),
     countPendingPayments(supabase),
   ]);
@@ -192,6 +220,10 @@ async function Queue() {
         )}
       </div>
 
+      {samples.length > 0 && (
+        <SampleSection items={samples} superadmin={user.role === "superadmin"} t={t} locale={locale} />
+      )}
+
       <section>
         <h2 className="text-lg font-extrabold">{t.toReview(pending.length)}</h2>
         {pending.length === 0 ? (
@@ -222,6 +254,63 @@ async function Queue() {
         )}
       </section>
     </div>
+  );
+}
+
+/** Offres d'exemple regroupées : liste repliée, prolongation en bloc et suppression définitive (superadmin). */
+function SampleSection({
+  items,
+  superadmin,
+  t,
+  locale,
+}: {
+  items: ModerationItem[];
+  superadmin: boolean;
+  t: Text;
+  locale: Locale;
+}) {
+  return (
+    <section className="space-y-3 rounded-2xl border border-dashed border-sun bg-sun/10 p-4">
+      <h2 className="text-lg font-extrabold">{t.samples(items.length)}</h2>
+      <p className="text-sm text-ink/80">{t.samplesText}</p>
+
+      <details>
+        <summary className="cursor-pointer text-sm font-semibold text-brand">{t.samplesList}</summary>
+        <ul className="mt-2 divide-y divide-line rounded-xl bg-white text-sm">
+          {items.map(({ offer, business }) => (
+            <li key={offer.id} className="flex items-center gap-3 px-3 py-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold">{offer.title}</p>
+                <p className="truncate text-xs text-muted">
+                  {business.name} · {t.until(formatShortDate(offer.validUntil, locale))}
+                </p>
+              </div>
+              <Link href={`/admin/offres/${offer.id}`} aria-label={`${t.edit} : ${offer.title}`} className="text-muted">
+                <Pencil className="size-4" aria-hidden />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </details>
+
+      <div className="flex flex-wrap items-start gap-3">
+        <form action={extendSamples}>
+          <SubmitButton className={secondaryButtonClass}>
+            <CalendarDays className="size-4" aria-hidden />
+            {t.extend}
+          </SubmitButton>
+        </form>
+        {superadmin && (
+          <form action={deleteSamples} className="space-y-2">
+            <label className="flex items-center gap-2 text-xs">
+              <input type="checkbox" name="confirm" required className="size-4 accent-brand" />
+              {t.confirmDelete}
+            </label>
+            <SubmitButton className={`${secondaryButtonClass} text-red-700`}>{t.deleteAll}</SubmitButton>
+          </form>
+        )}
+      </div>
+    </section>
   );
 }
 

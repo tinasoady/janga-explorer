@@ -26,6 +26,8 @@ export type Business = {
   phone: string | null;
   rating: number | null;
   reviewCount: number;
+  /** Établissement fictif, ajouté pour présenter le site avant son lancement (étiquette « Exemple »). */
+  isSample?: boolean;
 };
 
 export type Offer = {
