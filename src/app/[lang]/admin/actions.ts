@@ -6,8 +6,8 @@ import { requireAdmin } from "@/lib/auth";
 import { todayIso } from "@/lib/format";
 import { messages } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/locale";
-import { removeOfferImage, uploadOfferImage } from "@/lib/offer-image";
-import { echoTickets, makeSlug, parseBusiness, parseOffer } from "@/lib/pro-forms";
+import { removeOfferPhotos } from "@/lib/offer-image";
+import { echoPhotos, echoTickets, makeSlug, parseBusiness, parseOffer, parsePhotos } from "@/lib/pro-forms";
 import type { FormState } from "../espace-pro/actions";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -16,13 +16,11 @@ const T = messages({
     generic: "Enregistrement impossible. Réessayez dans un instant.",
     gone: "Cette offre n'existe plus.",
     business: "Choisissez un établissement.",
-    photo: "Ajoutez une photo de l'offre.",
   },
   en: {
     generic: "Couldn't save. Please try again in a moment.",
     gone: "This deal no longer exists.",
     business: "Choose a business.",
-    photo: "Add a photo of the deal.",
   },
 });
 
@@ -111,6 +109,7 @@ export async function adminSaveOffer(_prev: FormState, formData: FormData): Prom
     ].map((n) => [n, field(n)]),
   );
   values.tickets = echoTickets(formData);
+  values.photos = echoPhotos(formData);
 
   const locale = await getRequestLocale();
   const t = T[locale];
@@ -120,16 +119,16 @@ export async function adminSaveOffer(_prev: FormState, formData: FormData): Prom
 
   const id = field("id");
   let existing: ExistingOffer | null = null;
-  let existingImage: string | null = null;
+  let existingPhotos: string[] = [];
   if (id) {
     const { data } = await supabase
       .from("offers")
-      .select("id, status, is_verified, verified_at, image_url")
+      .select("id, status, is_verified, verified_at, image_url, image_urls")
       .eq("id", UUID.test(id) ? id : "")
-      .maybeSingle<ExistingOffer & { image_url: string }>();
+      .maybeSingle<ExistingOffer & { image_url: string; image_urls: string[] | null }>();
     if (!data) return { error: t.gone, values };
     existing = data;
-    existingImage = data.image_url;
+    existingPhotos = [data.image_url, ...(data.image_urls ?? [])];
   }
 
   // Établissement : un existant, ou un nouveau créé ici (sans propriétaire, l'admin le gère).
@@ -156,17 +155,9 @@ export async function adminSaveOffer(_prev: FormState, formData: FormData): Prom
     return { error: t.business, values };
   }
 
-  // Photo : obligatoire à la création, facultative ensuite.
-  const file = formData.get("image");
-  let uploadedPath: string | null = null;
-  let imageUrl = existingImage;
-  if (file instanceof File && file.size > 0) {
-    const upload = await uploadOfferImage(supabase, user.id, file, locale);
-    if (!upload.ok) return fail(upload.error);
-    uploadedPath = upload.path;
-    imageUrl = upload.url;
-  }
-  if (!imageUrl) return fail(t.photo);
+  // Photos : déjà envoyées au stockage par le navigateur, on vérifie seulement leur provenance.
+  const photos = parsePhotos(formData, user.id, existingPhotos, locale);
+  if (!photos.ok) return fail(photos.error);
 
   const online = field("online") === "on";
   const verified = online && field("verified") === "on";
@@ -175,7 +166,8 @@ export async function adminSaveOffer(_prev: FormState, formData: FormData): Prom
     title: o.title,
     description: o.description,
     category: o.category,
-    image_url: imageUrl,
+    image_url: photos.value.cover,
+    image_urls: photos.value.extras,
     price_original: o.priceOriginal,
     price_offer: o.priceOffer,
     ticket_tiers: o.tickets,
@@ -197,9 +189,10 @@ export async function adminSaveOffer(_prev: FormState, formData: FormData): Prom
     : await supabase.from("offers").insert({ ...row, slug: makeSlug(o.title) });
 
   if (error) {
-    if (uploadedPath) await removeOfferImage(supabase, uploadedPath);
+    await removeOfferPhotos(supabase, photos.value.added);
     return fail(t.generic);
   }
+  await removeOfferPhotos(supabase, photos.value.removed);
 
   updateTag("offers");
   redirect("/admin");

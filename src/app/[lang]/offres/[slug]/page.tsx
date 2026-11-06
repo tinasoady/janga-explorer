@@ -9,6 +9,7 @@ import { FavoriteButton } from "@/components/favorite-button";
 import { WhatsAppIcon } from "@/components/contact-links";
 import { DiscountBadge, HighlightBadge, SampleTag } from "@/components/offer-card";
 import { TrackedLink, TrackOfferView } from "@/components/offer-tracking";
+import { Slider } from "@/components/slider";
 import {
   formatAriary,
   formatLongDate,
@@ -45,6 +46,7 @@ const T = messages({
     conditionsLabel: "Conditions :",
     place: "Lieu",
     exactPlace: "Localisation précise fournie",
+    photos: (title: string) => `Photos de l'offre ${title}`,
     whatsapp: "Contacter sur WhatsApp",
     map: "Voir la localisation",
     call: (phone: string) => `Appeler ${phone}`,
@@ -78,6 +80,7 @@ const T = messages({
     conditionsLabel: "Conditions:",
     place: "Location",
     exactPlace: "Exact location provided",
+    photos: (title: string) => `Photos of the deal ${title}`,
     whatsapp: "Contact on WhatsApp",
     map: "See the location",
     call: (phone: string) => `Call ${phone}`,
@@ -134,15 +137,24 @@ async function OfferDetails({ params }: { params: Promise<{ slug: string }> }) {
     <article className="md:mx-auto md:max-w-3xl md:pt-6 lg:grid lg:max-w-none lg:grid-cols-2 lg:items-start lg:gap-10 lg:px-4 lg:pt-8">
       <TrackOfferView offerId={offer.id} />
       <div className="relative aspect-[4/3] w-full overflow-hidden md:rounded-3xl lg:sticky lg:top-24">
-        <Image
-          src={offer.imageUrl}
-          alt={offer.title}
-          fill
-          priority
-          sizes="(min-width: 1024px) 540px, (min-width: 768px) 768px, 100vw"
-          className="object-cover"
-        />
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/40 to-transparent" />
+        {/* Galerie à faire glisser, la couverture d'abord (sans flèches ni points s'il n'y a qu'une photo). */}
+        <div className="absolute inset-0">
+          <Slider label={t.photos(offer.title)} overlay className="h-full">
+            {[offer.imageUrl, ...offer.imageUrls].map((src, i) => (
+              <div key={src} className="relative h-full w-full">
+                <Image
+                  src={src}
+                  alt={i === 0 ? offer.title : ""}
+                  fill
+                  priority={i === 0}
+                  sizes="(min-width: 1024px) 540px, (min-width: 768px) 768px, 100vw"
+                  className="object-cover"
+                />
+              </div>
+            ))}
+          </Slider>
+        </div>
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/40 to-transparent" />
         <BackButton fallback="/bons-plans" className="absolute top-3 left-3 bg-white/90 text-ink backdrop-blur" />
         <FavoriteButton slug={offer.slug} className="absolute top-3 right-3 size-10 shadow-sm" />
       </div>

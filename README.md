@@ -118,7 +118,11 @@ Authentication > Attack Protection.
 3. Modifier une offre déjà en ligne la repasse en validation (garde-fou posé en base, pas seulement dans l'interface).
    Les offres dont `valid_until` est passé disparaissent automatiquement.
 
-Un compte = un établissement. Les photos sont stockées dans le bucket public `offer-images` (5 Mo, JPEG/PNG/WebP).
+Un compte = un établissement. Une offre a jusqu'à 8 photos (la première est la couverture, les autres s'affichent dans
+la galerie de la fiche). Le pro choisit des photos jusqu'à 20 Mo : le navigateur les réduit (2 000 px de côté au plus,
+JPEG) puis les envoie directement au bucket public `offer-images` (10 Mo par fichier) par des liens d'envoi signés.
+Le serveur web ne reçoit que leurs adresses, car Vercel limite une requête à 4,5 Mo. À l'enregistrement, il vérifie
+que chaque photo est déjà sur l'offre ou vient du dossier de la personne, et supprime du stockage les photos retirées.
 
 ## Abonnement des comptes pro
 

@@ -23,6 +23,7 @@ type OfferRow = {
   description: string;
   category: string;
   image_url: string;
+  image_urls?: string[]; // absent tant que la migration 20261107000010 n'est pas appliquée
   price_original: number | null;
   price_offer: number;
   ticket_tiers: TicketTier[] | null;
@@ -54,6 +55,7 @@ function toOffer(row: OfferRow, today: string): Offer | null {
     description: row.description,
     category: row.category,
     imageUrl: row.image_url,
+    imageUrls: row.image_urls ?? [],
     priceOriginal: row.price_original,
     priceOffer: row.price_offer,
     tickets: row.ticket_tiers,
@@ -127,16 +129,26 @@ export async function getWeekendOffers() {
   );
 }
 
-/** Le bon plan du jour : une offre à la une (avec remise si possible), qui change chaque jour à minuit. */
-export function pickDealOfTheDay(offers: Offer[], today: string) {
-  const featured = offers.filter((o) => o.isFeatured);
-  const discounted = featured.filter((o) => discountPercent(o.priceOriginal, o.priceOffer) !== null);
-  const pool = (discounted.length ? discounted : featured.length ? featured : offers)
-    .slice()
-    .sort((a, b) => a.id.localeCompare(b.id));
-  if (pool.length === 0) return null;
+/**
+ * Les bons plans du jour : `count` offres, d'abord celles à la une avec une remise, puis les autres offres à remise,
+ * puis le reste. La sélection tourne chaque jour à minuit, pour que les mêmes offres ne restent pas en tête.
+ */
+export function pickDealsOfTheDay(offers: Offer[], today: string, count = 5) {
+  const hasDiscount = (o: Offer) => discountPercent(o.priceOriginal, o.priceOffer) !== null;
+  const byId = (a: Offer, b: Offer) => a.id.localeCompare(b.id);
+  const tiers = [
+    offers.filter((o) => o.isFeatured && hasDiscount(o)),
+    offers.filter((o) => !o.isFeatured && hasDiscount(o)),
+    offers.filter((o) => !hasDiscount(o)),
+  ].map((group) => group.sort(byId));
   const day = Math.floor(new Date(`${today}T12:00:00Z`).getTime() / 86_400_000);
-  return pool[day % pool.length];
+
+  const picked: Offer[] = [];
+  for (const group of tiers) {
+    const start = group.length ? day % group.length : 0;
+    for (let i = 0; i < group.length && picked.length < count; i++) picked.push(group[(start + i) % group.length]);
+  }
+  return picked;
 }
 
 export type PublicPricing = { monthlyPrice: number; dayPrice: number; trialDays: number };

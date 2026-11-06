@@ -5,9 +5,9 @@ import { redirect } from "next/navigation";
 import { requireProAccess } from "@/lib/auth";
 import { messages } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/locale";
-import { removeOfferImage, uploadOfferImage } from "@/lib/offer-image";
+import { createPhotoUploads, MAX_OFFER_PHOTOS, removeOfferPhotos, type PhotoUpload } from "@/lib/offer-image";
 import { getMyBusiness, getMyOffer } from "@/lib/pro";
-import { echoTickets, makeSlug, parseBusiness, parseOffer } from "@/lib/pro-forms";
+import { echoPhotos, echoTickets, makeSlug, parseBusiness, parseOffer, parsePhotos } from "@/lib/pro-forms";
 import { getToday } from "@/lib/offers";
 import { canPayPerOffer, canPublish, getMySubscription, MAX_PASS_DAYS, passDaysDue } from "@/lib/subscription";
 
@@ -20,14 +20,12 @@ const T = messages({
     canceled: "Votre abonnement a été annulé : contactez Janga Explorer pour publier à nouveau.",
     tooLong: `Sans abonnement, la visibilité se paie pour ${MAX_PASS_DAYS} jours au plus : choisissez une date de fin plus proche, ou abonnez-vous (plus avantageux sur une longue durée).`,
     gone: "Cette offre n'existe plus.",
-    photo: "Ajoutez une photo de l'offre.",
   },
   en: {
     generic: "Couldn't save. Please try again in a moment.",
     canceled: "Your subscription has been cancelled: contact Janga Explorer to post again.",
     tooLong: `Without a subscription, visibility can be paid for ${MAX_PASS_DAYS} days at most: choose an earlier end date, or subscribe (better value over a long period).`,
     gone: "This deal no longer exists.",
-    photo: "Add a photo of the deal.",
   },
 });
 
@@ -77,6 +75,7 @@ export async function saveOffer(_prev: FormState, formData: FormData): Promise<F
     "presaleUntil",
   ]);
   values.tickets = echoTickets(formData);
+  values.photos = echoPhotos(formData);
 
   const locale = await getRequestLocale();
   const t = T[locale];
@@ -96,23 +95,16 @@ export async function saveOffer(_prev: FormState, formData: FormData): Promise<F
   const daysDue = subscribed ? 0 : passDaysDue({ validUntil: o.validUntil, passUntil: existing?.passUntil ?? null }, await getToday());
   if (daysDue > MAX_PASS_DAYS) return { error: t.tooLong, values };
 
-  // Photo : obligatoire à la création, facultative ensuite (on garde l'ancienne).
-  const file = formData.get("image");
-  let uploadedPath: string | null = null;
-  let imageUrl = existing?.imageUrl ?? null;
-  if (file instanceof File && file.size > 0) {
-    const upload = await uploadOfferImage(supabase, user.id, file, locale);
-    if (!upload.ok) return { error: upload.error, values };
-    uploadedPath = upload.path;
-    imageUrl = upload.url;
-  }
-  if (!imageUrl) return { error: t.photo, values };
+  // Photos : déjà envoyées au stockage par le navigateur, on vérifie seulement leur provenance.
+  const photos = parsePhotos(formData, user.id, existing ? [existing.imageUrl, ...existing.imageUrls] : [], locale);
+  if (!photos.ok) return { error: photos.error, values };
 
   const row = {
     title: o.title,
     description: o.description,
     category: o.category,
-    image_url: imageUrl,
+    image_url: photos.value.cover,
+    image_urls: photos.value.extras,
     price_original: o.priceOriginal,
     price_offer: o.priceOffer,
     ticket_tiers: o.tickets,
@@ -132,13 +124,24 @@ export async function saveOffer(_prev: FormState, formData: FormData): Promise<F
         .single();
 
   if (error) {
-    if (uploadedPath) await removeOfferImage(supabase, uploadedPath);
+    await removeOfferPhotos(supabase, photos.value.added);
     return { error: t.generic, values };
   }
+  await removeOfferPhotos(supabase, photos.value.removed);
 
   // Une offre modifiée repasse en validation : elle doit disparaître du site public.
   updateTag("offers");
   redirect(daysDue > 0 ? passPage(saved.id) : "/espace-pro");
+}
+
+/**
+ * Liens d'envoi signés pour les photos d'une offre : le navigateur y envoie directement les photos réduites.
+ * Ouvert aux pros approuvés et aux administrateurs (formulaire d'offre de l'admin).
+ */
+export async function requestPhotoUploads(count: number): Promise<PhotoUpload[] | null> {
+  const { user, supabase } = await requireProAccess("/espace-pro");
+  const n = Number.isInteger(count) ? Math.min(Math.max(count, 1), MAX_OFFER_PHOTOS) : 1;
+  return createPhotoUploads(supabase, user.id, n);
 }
 
 async function ownedOfferId(formData: FormData) {

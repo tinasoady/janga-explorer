@@ -1,5 +1,6 @@
 import { addDaysIso, todayIso } from "./format";
 import { messages, type Locale } from "./i18n";
+import { isOwnPhoto, MAX_OFFER_PHOTOS } from "./offer-image";
 import { MAX_TICKET_TIERS, ticketSummary, type TicketTier } from "./tickets";
 import { isCategory, type CategoryKey } from "./types";
 
@@ -49,6 +50,9 @@ const ERRORS = messages({
     imageType: "La photo doit être au format JPEG, PNG ou WebP.",
     imageSize: "La photo est trop lourde (5 Mo maximum).",
     imageInvalid: "Ce fichier n'est pas une image valide.",
+    photosMissing: "Ajoutez au moins une photo de l'offre.",
+    photosTooMany: `${MAX_OFFER_PHOTOS} photos au maximum par offre.`,
+    photoForeign: "Une photo n'a pas pu être vérifiée. Retirez-la et envoyez-la à nouveau.",
     tiersCount: `Ajoutez entre 1 et ${MAX_TICKET_TIERS} tarifs.`,
     tierLabel: "Donnez un nom à chaque tarif (40 caractères maximum), ex : Billet normal, VIP.",
     tierPrice: (label: string) => `Indiquez au moins un prix (prévente ou sur place) pour « ${label} ».`,
@@ -80,6 +84,9 @@ const ERRORS = messages({
     imageType: "The photo must be a JPEG, PNG or WebP file.",
     imageSize: "The photo is too large (5 MB max).",
     imageInvalid: "This file isn't a valid image.",
+    photosMissing: "Add at least one photo of the deal.",
+    photosTooMany: `${MAX_OFFER_PHOTOS} photos at most per deal.`,
+    photoForeign: "A photo couldn't be checked. Remove it and upload it again.",
     tiersCount: `Add between 1 and ${MAX_TICKET_TIERS} ticket types.`,
     tierLabel: "Give each ticket type a name (40 characters max), e.g. Standard, VIP.",
     tierPrice: (label: string) => `Enter at least one price (presale or at the door) for "${label}".`,
@@ -290,6 +297,47 @@ export async function checkImage(
     (ext === "png" && is(0x89, 0x50, 0x4e, 0x47)) ||
     (ext === "webp" && is(0x52, 0x49, 0x46, 0x46) && head[8] === 0x57 && head[9] === 0x45 && head[10] === 0x42);
   return real ? { ok: true, ext } : { ok: false, error: e.imageInvalid };
+}
+
+export type PhotosInput = {
+  /** Couverture (première photo) et photos en plus, dans l'ordre choisi. */
+  cover: string;
+  extras: string[];
+  /** Photos envoyées pour cet enregistrement (à supprimer s'il échoue). */
+  added: string[];
+  /** Photos de l'offre que la personne a retirées (à supprimer du stockage une fois l'offre enregistrée). */
+  removed: string[];
+};
+
+/**
+ * Photos choisies dans le formulaire (champs `photo` répétés, adresses publiques). Chacune doit être une photo déjà
+ * enregistrée sur l'offre, ou une photo que la personne vient d'envoyer dans son propre dossier du stockage.
+ */
+export function parsePhotos(
+  formData: FormData,
+  userId: string,
+  current: string[],
+  locale: Locale = "fr",
+): Parsed<PhotosInput> {
+  const e = ERRORS[locale];
+  const photos = [...new Set(formData.getAll("photo").map((v) => String(v).trim()).filter(Boolean))];
+  if (photos.length === 0) return { ok: false, error: e.photosMissing };
+  if (photos.length > MAX_OFFER_PHOTOS) return { ok: false, error: e.photosTooMany };
+  if (photos.some((url) => !current.includes(url) && !isOwnPhoto(url, userId))) return { ok: false, error: e.photoForeign };
+  return {
+    ok: true,
+    value: {
+      cover: photos[0],
+      extras: photos.slice(1),
+      added: photos.filter((url) => !current.includes(url)),
+      removed: current.filter((url) => !photos.includes(url)),
+    },
+  };
+}
+
+/** Saisie des photos renvoyée au formulaire après une erreur (React vide les champs après une action). */
+export function echoPhotos(formData: FormData) {
+  return JSON.stringify(formData.getAll("photo").map(String));
 }
 
 /** "Menu duo au bord de mer" → "menu-duo-au-bord-de-mer-k3x9a" */

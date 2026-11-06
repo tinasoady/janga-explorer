@@ -36,7 +36,10 @@ export type Offer = {
   title: string;
   description: string;
   category: CategoryKey;
+  /** Photo de couverture (cartes, partage). */
   imageUrl: string;
+  /** Photos en plus, affichées dans la galerie de la fiche (7 au plus). */
+  imageUrls: string[];
   /** Avec une billetterie : prix sur place du tarif le moins cher quand la prévente le rend moins cher. */
   priceOriginal: number | null;
   /** Avec une billetterie : prix du tarif le moins cher aujourd'hui (prévente si elle est ouverte). */

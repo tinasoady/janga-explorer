@@ -32,6 +32,7 @@ export type ManagedOffer = {
   description: string;
   category: CategoryKey;
   imageUrl: string;
+  imageUrls: string[];
   priceOriginal: number | null;
   priceOffer: number;
   tickets: TicketTier[] | null;
@@ -65,6 +66,7 @@ export type ManagedOfferRow = {
   description: string;
   category: string;
   image_url: string;
+  image_urls?: string[]; // absent tant que la migration 20261107000010 n'est pas appliquée
   price_original: number | null;
   price_offer: number;
   ticket_tiers: TicketTier[] | null;
@@ -93,6 +95,7 @@ export function toManaged(row: ManagedOfferRow): ManagedOffer | null {
     description: row.description,
     category: row.category,
     imageUrl: row.image_url,
+    imageUrls: row.image_urls ?? [],
     priceOriginal: row.price_original,
     priceOffer: row.price_offer,
     tickets: row.ticket_tiers,

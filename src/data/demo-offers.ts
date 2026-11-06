@@ -217,7 +217,12 @@ const businesses = {
   },
 } satisfies Record<string, Business>;
 
-type DemoOffer = Omit<Offer, "validUntil" | "verifiedAt" | "mapUrl" | "tickets" | "presaleUntil" | "publishedAt"> & {
+type DemoOffer = Omit<
+  Offer,
+  "validUntil" | "verifiedAt" | "mapUrl" | "tickets" | "presaleUntil" | "publishedAt" | "imageUrls"
+> & {
+  /** Photos en plus pour la galerie (identifiants Unsplash). */
+  gallery?: string[];
   validInDays: number;
   verifiedDaysAgo: number | null;
   /** Mise en ligne il y a ce nombre de jours (badge « Nouveau » jusqu'à 2 jours) ; sans valeur, offre ancienne. */
@@ -452,6 +457,7 @@ const offers: DemoOffer[] = [
     description: "Pour deux pizzas achetées, la moins chère est à moitié prix. Pâte maison cuite au feu de bois, 12 recettes au choix, dont la pizza aux crevettes.",
     category: "manger",
     imageUrl: unsplash("1574071318508-1cdbab80d002"),
+    gallery: ["1565299624946-b28f40a0ae38", "1551218808-94e220e084d2"],
     priceOriginal: 64000,
     priceOffer: 48000,
     conditions: "Prix pour 2 pizzas moyennes. Sur place ou à emporter, du lundi au jeudi.",
@@ -538,6 +544,7 @@ const offers: DemoOffer[] = [
     description: "Le poisson pêché le matin même (capitaine, mérou ou thon selon l'arrivage), grillé, avec riz coco ou frites et une salade.",
     category: "manger",
     imageUrl: unsplash("1519708227418-c8fd9a32b7a2"),
+    gallery: ["1615141982883-c7ad0e69fd62", "1559339352-11d035aa65de"],
     priceOriginal: 32000,
     priceOffer: 25000,
     conditions: "Dans la limite de la pêche du jour. Demandez le poisson disponible sur WhatsApp.",
@@ -642,6 +649,7 @@ const offers: DemoOffer[] = [
     description: "Bungalow pour deux personnes à 20 mètres de la mer, avec terrasse, ventilateur et moustiquaire. Petit-déjeuner compris les deux matins.",
     category: "dormir",
     imageUrl: unsplash("1499793983690-e29da59ef1c2"),
+    gallery: ["1507525428034-b723cf961d3e", "1582719508461-905c673771fd", "1473116763249-2faaef81ccda"],
     priceOriginal: 360000,
     priceOffer: 280000,
     conditions: "Arrivée du dimanche au jeudi. Transfert depuis Mahajanga en supplément (30 000 Ar).",
@@ -677,6 +685,7 @@ const offers: DemoOffer[] = [
     description: "Accès à la piscine et aux transats de 9 h à 17 h, serviette fournie, avec un déjeuner (plat et boisson) au restaurant de l'hôtel.",
     category: "dormir",
     imageUrl: unsplash("1540541338287-41700207dee6"),
+    gallery: ["1571896349842-33c89424de2d", "1566073771259-6a8506099945", "1540189549336-e6e99c3679fe"],
     priceOriginal: 60000,
     priceOffer: 45000,
     conditions: "Prix par adulte. Enfants de moins de 12 ans : 25 000 Ar. Sur réservation la veille.",
@@ -728,6 +737,7 @@ const offers: DemoOffer[] = [
     description: "Deux nuits en chambre double, deux petits-déjeuners et un dîner pour deux le samedi soir au bord de la piscine.",
     category: "dormir",
     imageUrl: unsplash("1542314831-068cd1dbfeeb"),
+    gallery: ["1590490360182-c33d57733427", "1540541338287-41700207dee6", "1517248135467-4c7edcad34c4"],
     priceOriginal: 420000,
     priceOffer: 330000,
     conditions: "Arrivée le vendredi, départ le dimanche à midi.",
@@ -779,6 +789,7 @@ const offers: DemoOffer[] = [
     description: "Première plongée avec un moniteur, jusqu'à 6 mètres de profondeur. Équipement complet, briefing et sortie en bateau compris.",
     category: "activites",
     imageUrl: unsplash("1530053969600-caed2596d242"),
+    gallery: ["1544551763-46a013bb70d5", "1544551763-77ef2d0cfc6c"],
     priceOriginal: 190000,
     priceOffer: 150000,
     conditions: "À partir de 10 ans. Départ à 8 h, retour vers 11 h 30. Annulé si la mer est trop agitée.",
@@ -813,6 +824,7 @@ const offers: DemoOffer[] = [
     description: "Traversée en bateau vers Katsepy, deux heures de snorkeling avec palmes, masque et tuba fournis, puis poisson grillé sur la plage.",
     category: "activites",
     imageUrl: unsplash("1544551763-77ef2d0cfc6c"),
+    gallery: ["1530053969600-caed2596d242", "1570789210967-2cac24afeb00", "1519708227418-c8fd9a32b7a2"],
     priceOriginal: 120000,
     priceOffer: 90000,
     conditions: "Départ à 8 h du port, retour vers 15 h. 4 personnes minimum.",
@@ -934,6 +946,7 @@ const offers: DemoOffer[] = [
     description: "Trois groupes de salegy de Mahajanga sur la même scène, de 20 h à 1 h. Buvette et grillades sur place.",
     category: "sorties",
     imageUrl: unsplash("1459749411175-04bf5292ceea"),
+    gallery: ["1429962714451-bb934ecdc4ec", "1533174072545-7a4b6ad7a6c3"],
     priceOriginal: 20000,
     priceOffer: 15000,
     tickets: [
@@ -1118,8 +1131,9 @@ const offers: DemoOffer[] = [
 ];
 
 export function getDemoOffers(today: string): Offer[] {
-  return offers.map(({ validInDays, verifiedDaysAgo, tickets, presaleInDays, publishedDaysAgo, ...offer }) => ({
+  return offers.map(({ validInDays, verifiedDaysAgo, tickets, presaleInDays, publishedDaysAgo, gallery, ...offer }) => ({
     ...offer,
+    imageUrls: (gallery ?? []).map(unsplash),
     publishedAt:
       publishedDaysAgo === undefined ? undefined : `${addDaysIso(today, -publishedDaysAgo)}T06:00:00.000Z`,
     tickets: tickets ?? null,

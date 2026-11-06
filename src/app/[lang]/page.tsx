@@ -3,7 +3,7 @@ import Link from "next/link";
 import Form from "next/form";
 import { ArrowRight, BadgeCheck, MapPin, MessageCircle, Search, Store, Wallet } from "lucide-react";
 import { CATEGORY_STYLE } from "@/components/category";
-import { DealOfTheDay } from "@/components/deal-of-the-day";
+import { DealsOfTheDay } from "@/components/deal-of-the-day";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { Logo } from "@/components/logo";
 import { OfferCard } from "@/components/offer-card";
@@ -12,7 +12,7 @@ import { formatAriary } from "@/lib/format";
 import { isLastChance } from "@/lib/highlight";
 import { messages } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
-import { getActiveOffers, getPublicPricing, getToday, getWeekendOffers, pickDealOfTheDay } from "@/lib/offers";
+import { getActiveOffers, getPublicPricing, getToday, getWeekendOffers, pickDealsOfTheDay } from "@/lib/offers";
 import { CATEGORIES, type Offer } from "@/lib/types";
 
 const HERO_IMAGE =
@@ -68,9 +68,10 @@ export default async function HomePage() {
     getLocale(),
   ]);
   const t = T[locale];
-  const deal = pickDealOfTheDay(offers, today);
-  // Le bon plan du jour a sa propre carte : on ne le répète pas juste en dessous.
-  const featured = offers.filter((o) => o.isFeatured && o.id !== deal?.id);
+  const deals = pickDealsOfTheDay(offers, today);
+  // Les bons plans du jour ont leurs grandes cartes : on ne les répète pas juste en dessous.
+  const dealIds = new Set(deals.map((d) => d.id));
+  const featured = offers.filter((o) => o.isFeatured && !dealIds.has(o.id));
   const lastChance = offers
     .filter((o) => isLastChance(o, today))
     .sort((a, b) => a.validUntil.localeCompare(b.validUntil));
@@ -186,7 +187,7 @@ export default async function HomePage() {
         })}
       </ul>
 
-      {deal && <DealOfTheDay offer={deal} today={today} />}
+      <DealsOfTheDay offers={deals} today={today} />
       <Carousel title={t.featured} seeAll={t.seeAll} href="/bons-plans" offers={featured} today={today} />
       <Carousel title={t.lastChance} seeAll={t.seeAll} href="/bons-plans?sort=fin" offers={lastChance} today={today} />
       <Carousel title={t.weekend} seeAll={t.seeAll} href="/bons-plans" offers={weekend} today={today} />

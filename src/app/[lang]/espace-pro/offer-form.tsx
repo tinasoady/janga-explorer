@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useActionState, useState } from "react";
 import { ExternalLink, MapPin, Wallet } from "lucide-react";
 import { Field, FormMessage, inputClass, primaryButtonClass } from "@/components/form-ui";
@@ -13,10 +12,23 @@ import { MAX_PASS_DAYS, passDaysDue } from "@/lib/subscription";
 import { CATEGORIES, type CategoryKey } from "@/lib/types";
 import { AdminOfferFields, type AdminOfferDefaults } from "../admin/offres/admin-offer-fields";
 import { saveOffer, type FormState } from "./actions";
+import { PhotoPicker } from "./photo-picker";
 import { TicketFields, type TicketRow } from "./ticket-fields";
 
 /** Catégories où l'on propose une billetterie à plusieurs tarifs (concerts, soirées, excursions…). */
 const TICKET_CATEGORIES: CategoryKey[] = ["sorties", "activites"];
+
+/** Photos à afficher : saisie renvoyée après une erreur, sinon photos enregistrées (couverture en premier). */
+function initialPhotos(echoed: string | undefined, offer: ManagedOffer | null): string[] {
+  if (echoed) {
+    try {
+      return JSON.parse(echoed) as string[];
+    } catch {
+      // saisie illisible : on repart des photos enregistrées
+    }
+  }
+  return offer ? [offer.imageUrl, ...offer.imageUrls] : [];
+}
 
 /** Lignes de billetterie à afficher : saisie renvoyée après une erreur, sinon tarifs enregistrés. */
 function initialTickets(echoed: string | undefined, offer: ManagedOffer | null): TicketRow[] {
@@ -74,10 +86,6 @@ const T = messages({
     visibility: "Visibilité :",
     days: (n: number) => `${n} jour${n > 1 ? "s" : ""}`,
     payNext: ", à payer par Mobile Money à l'étape suivante.",
-    photo: "Photo",
-    photoKeep: "Laissez vide pour garder la photo actuelle. JPEG, PNG ou WebP, 5 Mo maximum.",
-    photoHint: "JPEG, PNG ou WebP, 5 Mo maximum.",
-    currentPhoto: "Photo actuelle",
     verifyNote:
       "Avant la mise en ligne, nous vous appelons pour confirmer le prix et les conditions : c'est ce qui donne le badge « Offre vérifiée ».",
     toPayment: "Continuer vers le paiement",
@@ -113,10 +121,6 @@ const T = messages({
     visibility: "Visibility:",
     days: (n: number) => `${n} day${n > 1 ? "s" : ""}`,
     payNext: ", to pay by Mobile Money in the next step.",
-    photo: "Photo",
-    photoKeep: "Leave empty to keep the current photo. JPEG, PNG or WebP, 5 MB max.",
-    photoHint: "JPEG, PNG or WebP, 5 MB max.",
-    currentPhoto: "Current photo",
     verifyNote:
       "Before the deal goes live, we call you to confirm the price and conditions: that's what earns the \"Verified deal\" badge.",
     toPayment: "Continue to payment",
@@ -144,6 +148,7 @@ export function OfferForm({ offer, minDate, action: saveAction = saveOffer, admi
   };
   const v = (name: string) => state?.values?.[name] ?? saved[name];
   const [validUntil, setValidUntil] = useState(v("validUntil"));
+  const [uploading, setUploading] = useState(false);
   const [category, setCategory] = useState(v("category"));
   const [pricing, setPricing] = useState(state?.values?.pricing || (offer?.tickets ? "tickets" : "single"));
   // Une offre qui a déjà une billetterie la garde, même si sa catégorie ne la propose pas d'habitude.
@@ -325,25 +330,12 @@ export function OfferForm({ offer, minDate, action: saveAction = saveOffer, admi
         </p>
       )}
 
-      <Field label={t.photo} hint={offer ? t.photoKeep : t.photoHint}>
-        {offer && (
-          <div className="relative mb-2 aspect-[4/3] w-40 overflow-hidden rounded-xl">
-            <Image src={offer.imageUrl} alt={t.currentPhoto} fill sizes="160px" className="object-cover" />
-          </div>
-        )}
-        <input
-          name="image"
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          required={!offer}
-          className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-brand-soft file:px-4 file:py-2 file:font-semibold file:text-brand"
-        />
-      </Field>
+      <PhotoPicker initial={initialPhotos(state?.values?.photos, offer)} onBusyChange={setUploading} />
 
       {!admin && <p className="rounded-xl bg-surface px-3.5 py-2.5 text-xs text-muted">{t.verifyNote}</p>}
 
       <FormMessage error={state?.error} />
-      <SubmitButton className={primaryButtonClass}>
+      <SubmitButton className={primaryButtonClass} disabled={uploading}>
         {dayPass && daysDue > 0 ? t.toPayment : offer ? t.save : admin ? t.create : t.send}
       </SubmitButton>
     </form>
