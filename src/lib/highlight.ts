@@ -1,4 +1,5 @@
 import { dateOf, daysBetween } from "./format";
+import type { Locale } from "./i18n";
 import type { Offer } from "./types";
 
 // Repères d'urgence et de nouveauté affichés sur les cartes d'offres. Sans dépendance serveur : aussi utilisé
@@ -22,14 +23,24 @@ export function isLastChance(offer: Pick<Offer, "validUntil">, today: string) {
   return daysLeft(offer, today) <= LAST_CHANCE_DAYS;
 }
 
+const LABELS = {
+  fr: { last: "Dernier jour", tomorrow: "Jusqu'à demain", left: (n: number) => `Plus que ${n} jours`, new: "Nouveau" },
+  en: { last: "Last day", tomorrow: "Ends tomorrow", left: (n: number) => `${n} days left`, new: "New" },
+} satisfies Record<Locale, unknown>;
+
 /** Le repère le plus utile pour décider vite : la fin proche passe avant la nouveauté. */
-export function offerHighlight(offer: Pick<Offer, "validUntil" | "publishedAt">, today: string): OfferHighlight | null {
+export function offerHighlight(
+  offer: Pick<Offer, "validUntil" | "publishedAt">,
+  today: string,
+  locale: Locale = "fr",
+): OfferHighlight | null {
+  const t = LABELS[locale];
   const left = daysLeft(offer, today);
-  if (left <= 0) return { label: "Dernier jour", tone: "urgent" };
-  if (left === 1) return { label: "Jusqu'à demain", tone: "urgent" };
-  if (left <= LAST_CHANCE_DAYS) return { label: `Plus que ${left + 1} jours`, tone: "soon" };
+  if (left <= 0) return { label: t.last, tone: "urgent" };
+  if (left === 1) return { label: t.tomorrow, tone: "urgent" };
+  if (left <= LAST_CHANCE_DAYS) return { label: t.left(left + 1), tone: "soon" };
   if (offer.publishedAt && daysBetween(dateOf(offer.publishedAt), today) <= NEW_DAYS) {
-    return { label: "Nouveau", tone: "new" };
+    return { label: t.new, tone: "new" };
   }
   return null;
 }

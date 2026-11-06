@@ -2,19 +2,41 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, MapPin, Sparkles } from "lucide-react";
 import { formatAriary } from "@/lib/format";
+import { messages } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
+import { hasSeveralPrices } from "@/lib/tickets";
 import type { Offer } from "@/lib/types";
 import { MidnightCountdown } from "./midnight-countdown";
 import { DiscountBadge, HighlightBadge, VerifiedBadge } from "./offer-card";
 import { SectionTitle } from "./section-title";
 
+const T = messages({
+  fr: {
+    title: "Le bon plan du jour",
+    badge: "Sélection du jour",
+    saved: (amount: string) => `${amount} d'économie`,
+    cta: "Voir le bon plan",
+    from: "dès",
+  },
+  en: {
+    title: "Deal of the day",
+    badge: "Today's pick",
+    saved: (amount: string) => `save ${amount}`,
+    cta: "See the deal",
+    from: "from",
+  },
+});
+
 /** Grande carte de l'accueil : une offre mise en avant pour la journée. */
-export function DealOfTheDay({ offer, today }: { offer: Offer; today: string }) {
+export async function DealOfTheDay({ offer, today }: { offer: Offer; today: string }) {
+  const locale = await getLocale();
+  const t = T[locale];
   const savings = offer.priceOriginal ? offer.priceOriginal - offer.priceOffer : 0;
 
   return (
     <section className="px-4 pt-7 md:pt-12">
       <div className="flex items-center justify-between gap-3 pb-3 md:items-end md:pb-5">
-        <SectionTitle>Le bon plan du jour</SectionTitle>
+        <SectionTitle>{t.title}</SectionTitle>
         <MidnightCountdown className="shrink-0 md:pb-3" />
       </div>
 
@@ -34,7 +56,7 @@ export function DealOfTheDay({ offer, today }: { offer: Offer; today: string }) 
         <div className="space-y-3 p-5 md:flex md:flex-col md:justify-center md:p-8 lg:p-10">
           <p className="inline-flex w-fit items-center gap-1.5 rounded-full bg-sun px-3 py-1 text-xs font-extrabold tracking-wide text-ink uppercase">
             <Sparkles className="size-3.5" aria-hidden />
-            Sélection du jour
+            {t.badge}
           </p>
           <h3 className="text-2xl leading-tight font-extrabold md:text-3xl lg:text-4xl">
             <Link href={`/offres/${offer.slug}`} className="after:absolute after:inset-0">
@@ -49,14 +71,15 @@ export function DealOfTheDay({ offer, today }: { offer: Offer; today: string }) 
           </p>
           <p className="flex flex-wrap items-baseline gap-x-3">
             {savings > 0 && offer.priceOriginal && (
-              <span className="text-sm text-white/60 line-through">{formatAriary(offer.priceOriginal)}</span>
+              <span className="text-sm text-white/60 line-through">{formatAriary(offer.priceOriginal, locale)}</span>
             )}
-            <span className="text-3xl font-extrabold text-sun">{formatAriary(offer.priceOffer)}</span>
-            {savings > 0 && <span className="text-sm font-bold text-white">{formatAriary(savings)} d&apos;économie</span>}
+            {hasSeveralPrices(offer) && <span className="text-sm text-white/70">{t.from}</span>}
+            <span className="text-3xl font-extrabold text-sun">{formatAriary(offer.priceOffer, locale)}</span>
+            {savings > 0 && <span className="text-sm font-bold text-white">{t.saved(formatAriary(savings, locale))}</span>}
           </p>
           <HighlightBadge offer={offer} today={today} className="w-fit" />
           <span className="inline-flex w-fit items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-brand/40 md:mt-2 md:text-base">
-            Voir le bon plan
+            {t.cta}
             <ArrowRight className="size-4" aria-hidden />
           </span>
         </div>

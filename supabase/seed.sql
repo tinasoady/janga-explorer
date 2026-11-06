@@ -1,4 +1,5 @@
--- Données de démonstration (établissements fictifs, mêmes contenus que src/data/demo-offers.ts).
+-- Données de démonstration (établissements fictifs) : les 13 premières offres de src/data/demo-offers.ts. Le mode
+-- démonstration du site (NEXT_PUBLIC_DEMO_MODE=1) affiche la liste complète sans passer par la base.
 -- À exécuter dans l'éditeur SQL de Supabase après la migration 20261013000001_init.sql.
 
 with b as (

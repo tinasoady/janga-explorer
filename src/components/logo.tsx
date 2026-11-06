@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getLocale } from "@/lib/locale";
 
 /**
  * Icône Janga Explorer : une épingle de carte dont la pointe prolonge le tronc du baobab, devant le soleil
@@ -30,9 +31,10 @@ const SIZES = {
   lg: { mark: "size-12", text: "text-2xl lg:text-[28px]" },
 };
 
-export function Logo({ size = "md" }: { size?: keyof typeof SIZES }) {
+export async function Logo({ size = "md" }: { size?: keyof typeof SIZES }) {
+  const label = (await getLocale()) === "en" ? "Janga Explorer, home" : "Janga Explorer, accueil";
   return (
-    <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Janga Explorer, accueil">
+    <Link href="/" className="flex shrink-0 items-center gap-2" aria-label={label}>
       <LogoMark className={SIZES[size].mark} />
       <span className={`${SIZES[size].text} font-extrabold tracking-tight whitespace-nowrap text-ink`}>
         Janga <span className="text-brand-dark">Explorer</span>

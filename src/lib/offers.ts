@@ -2,6 +2,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { getDemoOffers } from "@/data/demo-offers";
 import { addDaysIso, discountPercent, todayIso } from "./format";
 import { getSupabase } from "./supabase";
+import { ticketSummary, type TicketTier } from "./tickets";
 import { isCategory, type Offer, type OfferFilters } from "./types";
 
 type BusinessRow = {
@@ -23,6 +24,8 @@ type OfferRow = {
   image_url: string;
   price_original: number | null;
   price_offer: number;
+  ticket_tiers: TicketTier[] | null;
+  presale_until: string | null;
   conditions: string | null;
   location: string;
   map_url: string | null;
@@ -34,9 +37,16 @@ type OfferRow = {
   business: BusinessRow;
 };
 
-function toOffer(row: OfferRow): Offer | null {
+/** Avec une billetterie, le prix affiché dépend du jour : prévente tant qu'elle est ouverte, puis prix sur place. */
+export function withTicketPrices(offer: Offer, today: string): Offer {
+  if (!offer.tickets?.length) return offer;
+  const { price, original } = ticketSummary(offer.tickets, offer.presaleUntil, today);
+  return { ...offer, priceOffer: price, priceOriginal: original };
+}
+
+function toOffer(row: OfferRow, today: string): Offer | null {
   if (!isCategory(row.category)) return null;
-  return {
+  return withTicketPrices({
     id: row.id,
     slug: row.slug,
     title: row.title,
@@ -45,6 +55,8 @@ function toOffer(row: OfferRow): Offer | null {
     imageUrl: row.image_url,
     priceOriginal: row.price_original,
     priceOffer: row.price_offer,
+    tickets: row.ticket_tiers,
+    presaleUntil: row.presale_until,
     conditions: row.conditions,
     location: row.location,
     mapUrl: row.map_url,
@@ -62,7 +74,7 @@ function toOffer(row: OfferRow): Offer | null {
       rating: row.business.rating,
       reviewCount: row.business.review_count,
     },
-  };
+  }, today);
 }
 
 /**
@@ -79,7 +91,9 @@ export async function getActiveOffers(): Promise<Offer[]> {
   const supabase = getSupabase();
 
   if (!supabase) {
-    return getDemoOffers(today).filter((o) => o.validUntil >= today);
+    return getDemoOffers(today)
+      .filter((o) => o.validUntil >= today)
+      .map((o) => withTicketPrices(o, today));
   }
 
   const { data, error } = await supabase
@@ -91,7 +105,7 @@ export async function getActiveOffers(): Promise<Offer[]> {
     .returns<OfferRow[]>();
 
   if (error) throw new Error(`Chargement des offres impossible : ${error.message}`);
-  return data.map(toOffer).filter((o): o is Offer => o !== null);
+  return data.map((row) => toOffer(row, today)).filter((o): o is Offer => o !== null);
 }
 
 /** Date du jour à Mahajanga, utilisable dans un rendu pré-calculé. */
@@ -125,14 +139,15 @@ export function pickDealOfTheDay(offers: Offer[], today: string) {
 
 export type PublicPricing = { monthlyPrice: number; dayPrice: number; trialDays: number };
 
-/** Tarifs de l'espace pro affichés au public (accueil, présentation pro). Null en mode démonstration. */
+/** Tarifs de l'espace pro affichés au public (accueil, présentation pro). */
 export async function getPublicPricing(): Promise<PublicPricing | null> {
   "use cache";
   cacheLife("hours");
   cacheTag("pricing");
 
   const supabase = getSupabase();
-  if (!supabase) return null;
+  // Démonstration : les valeurs par défaut de la base (migrations 20261016000006 et 20261106000007).
+  if (!supabase) return { monthlyPrice: 20000, dayPrice: 1000, trialDays: 30 };
   const { data } = await supabase
     .from("subscription_settings")
     .select("monthly_price, day_price, trial_days")

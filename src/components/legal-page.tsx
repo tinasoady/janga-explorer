@@ -1,29 +1,47 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { BackButton } from "./back-button";
-import { whatsappLink } from "@/lib/format";
+import { formatLongDate, whatsappLink } from "@/lib/format";
+import { messages, type Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
-export const LEGAL_PAGES = [
-  { href: "/confidentialite", label: "Confidentialité" },
-  { href: "/cookies", label: "Cookies" },
-  { href: "/conditions", label: "Conditions d'utilisation" },
-] as const;
+const PAGES = ["/confidentialite", "/cookies", "/conditions"] as const;
+type LegalHref = (typeof PAGES)[number];
 
-/** Date affichée en tête des pages légales : à changer à chaque modification de leur contenu. */
-const LAST_UPDATE = "16 octobre 2026";
+const T = messages({
+  fr: {
+    labels: { "/confidentialite": "Confidentialité", "/cookies": "Cookies", "/conditions": "Conditions d'utilisation" },
+    updated: "Dernière mise à jour :",
+    legal: "Informations légales",
+  },
+  en: {
+    labels: { "/confidentialite": "Privacy", "/cookies": "Cookies", "/conditions": "Terms of use" },
+    updated: "Last updated:",
+    legal: "Legal information",
+  },
+});
+
+export function legalPages(locale: Locale) {
+  return PAGES.map((href) => ({ href, label: T[locale].labels[href] }));
+}
+
+/** Date affichée en tête des pages légales (YYYY-MM-DD) : à changer à chaque modification de leur contenu. */
+const LAST_UPDATE = "2026-11-06";
 
 /** Mise en page commune aux pages légales : titre, onglets entre les documents et texte en colonne lisible. */
-export function LegalPage({
+export async function LegalPage({
   title,
   current,
   intro,
   children,
 }: {
   title: string;
-  current: (typeof LEGAL_PAGES)[number]["href"];
+  current: LegalHref;
   intro: ReactNode;
   children: ReactNode;
 }) {
+  const locale = await getLocale();
+  const t = T[locale];
   return (
     <div className="mx-auto w-full max-w-3xl pb-10">
       <header className="flex items-center gap-2 px-2 py-3 md:px-4 md:pt-8 md:pb-2">
@@ -32,10 +50,12 @@ export function LegalPage({
           {title}
         </h1>
       </header>
-      <p className="px-4 text-xs text-muted md:text-sm">Dernière mise à jour : {LAST_UPDATE}</p>
+      <p className="px-4 text-xs text-muted md:text-sm">
+        {t.updated} {formatLongDate(LAST_UPDATE, locale)}
+      </p>
 
-      <nav aria-label="Informations légales" className="no-scrollbar mt-4 flex gap-2 overflow-x-auto px-4">
-        {LEGAL_PAGES.map((p) => (
+      <nav aria-label={t.legal} className="no-scrollbar mt-4 flex gap-2 overflow-x-auto px-4">
+        {legalPages(locale).map((p) => (
           <Link
             key={p.href}
             href={p.href}
@@ -58,13 +78,20 @@ export function LegalPage({
 }
 
 /** Moyen de contact pour exercer ses droits ou poser une question. */
-export function LegalContact() {
+export async function LegalContact() {
+  const en = (await getLocale()) === "en";
   const contact = process.env.NEXT_PUBLIC_CONTACT_WHATSAPP;
-  if (!contact) return <>depuis la page <Link href="/pro">Espace pro</Link></>;
+  if (!contact) {
+    return en ? <>from the <Link href="/pro">Business space</Link> page</> : <>depuis la page <Link href="/pro">Espace pro</Link></>;
+  }
   return (
     <>
-      sur WhatsApp au{" "}
-      <a href={whatsappLink(contact, "Bonjour Janga Explorer, ")} target="_blank" rel="noopener noreferrer">
+      {en ? "on WhatsApp at" : "sur WhatsApp au"}{" "}
+      <a
+        href={whatsappLink(contact, en ? "Hello Janga Explorer, " : "Bonjour Janga Explorer, ")}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         +{contact}
       </a>
     </>

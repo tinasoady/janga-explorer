@@ -4,20 +4,29 @@ import { Suspense } from "react";
 import { BackButton } from "@/components/back-button";
 import { Unavailable } from "@/components/form-ui";
 import { requireProAccess } from "@/lib/auth";
+import { getLocale } from "@/lib/locale";
 import { getToday } from "@/lib/offers";
 import { getMyBusiness, getMyOffer } from "@/lib/pro";
 import { canPublish, getMySubscription, getSubscriptionSettings } from "@/lib/subscription";
 import { isSupabaseConfigured } from "@/lib/supabase-server";
 import { OfferForm } from "../../offer-form";
 
-export const metadata: Metadata = { title: "Modifier l'offre" };
+const TITLES = {
+  fr: { meta: "Modifier l'offre", heading: "Modifier l'offre" },
+  en: { meta: "Edit deal", heading: "Edit deal" },
+};
 
-export default function ModifierOffrePage({ params }: PageProps<"/espace-pro/offres/[id]">) {
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: TITLES[await getLocale()].meta };
+}
+
+export default async function ModifierOffrePage({ params }: PageProps<"/[lang]/espace-pro/offres/[id]">) {
+  const { heading } = TITLES[await getLocale()];
   return (
     <>
       <header className="flex items-center gap-2 px-2 py-3">
         <BackButton fallback="/espace-pro" />
-        <h1 className="text-xl font-extrabold">Modifier l&apos;offre</h1>
+        <h1 className="text-xl font-extrabold">{heading}</h1>
       </header>
       <Suspense fallback={<div className="m-5 h-96 animate-pulse rounded-2xl bg-surface" aria-hidden />}>
         <Content params={params} />
@@ -26,7 +35,7 @@ export default function ModifierOffrePage({ params }: PageProps<"/espace-pro/off
   );
 }
 
-async function Content({ params }: { params: PageProps<"/espace-pro/offres/[id]">["params"] }) {
+async function Content({ params }: { params: PageProps<"/[lang]/espace-pro/offres/[id]">["params"] }) {
   if (!isSupabaseConfigured()) return <Unavailable />;
   const { id } = await params;
   const { user, supabase } = await requireProAccess(`/espace-pro/offres/${id}`);

@@ -2,6 +2,33 @@
 
 import { useSyncExternalStore } from "react";
 import { Download, Share, SquarePlus } from "lucide-react";
+import { messages } from "@/lib/i18n";
+import { useLocale } from "./locale-provider";
+
+const T = messages({
+  fr: {
+    title: "Installer l'appli",
+    text: "Ajoutez Janga Explorer à votre écran d'accueil pour retrouver les bons plans en un geste, comme une application.",
+    button: "Installer Janga Explorer",
+    share1: "Touchez le bouton ",
+    share2: "Partager",
+    share3: " du navigateur.",
+    add1: "Choisissez ",
+    add2: "Sur l'écran d'accueil",
+    add3: ", puis Ajouter.",
+  },
+  en: {
+    title: "Install the app",
+    text: "Add Janga Explorer to your home screen to find the deals in one tap, just like an app.",
+    button: "Install Janga Explorer",
+    share1: "Tap the browser's ",
+    share2: "Share",
+    share3: " button.",
+    add1: "Choose ",
+    add2: "Add to Home Screen",
+    add3: ", then Add.",
+  },
+});
 
 // Événement propre à Chrome, Edge et Samsung Internet : il permet d'ouvrir la fenêtre d'installation au clic.
 type InstallPromptEvent = Event & {
@@ -78,6 +105,7 @@ export function InstallPromptCatcher() {
 /** Carte « Installer l'appli » : bouton sur Android et ordinateur, marche à suivre sur iPhone. Invisible si déjà installée. */
 export function InstallAppCard() {
   const state = useSyncExternalStore(subscribe, read, () => "hidden" as const);
+  const t = T[useLocale()];
 
   if (state === "hidden") return null;
 
@@ -85,20 +113,17 @@ export function InstallAppCard() {
     <section className="space-y-3 rounded-2xl bg-brand-soft p-4">
       <p className="flex items-center gap-2 font-bold">
         <Download className="size-5 text-brand" aria-hidden />
-        Installer l&apos;appli
+        {t.title}
       </p>
       {state === "prompt" ? (
         <>
-          <p className="text-sm text-muted">
-            Ajoutez Janga Explorer à votre écran d&apos;accueil pour retrouver les bons plans en un geste, comme une
-            application.
-          </p>
+          <p className="text-sm text-muted">{t.text}</p>
           <button
             type="button"
             onClick={() => void promptInstall()}
             className="w-full rounded-full bg-brand py-2.5 text-sm font-bold text-white"
           >
-            Installer Janga Explorer
+            {t.button}
           </button>
         </>
       ) : (
@@ -106,13 +131,17 @@ export function InstallAppCard() {
           <li className="flex items-center gap-2">
             <Share className="size-4 shrink-0 text-sea" aria-hidden />
             <span>
-              Touchez le bouton <strong className="text-ink">Partager</strong> du navigateur.
+              {t.share1}
+              <strong className="text-ink">{t.share2}</strong>
+              {t.share3}
             </span>
           </li>
           <li className="flex items-center gap-2">
             <SquarePlus className="size-4 shrink-0 text-sea" aria-hidden />
             <span>
-              Choisissez <strong className="text-ink">Sur l&apos;écran d&apos;accueil</strong>, puis Ajouter.
+              {t.add1}
+              <strong className="text-ink">{t.add2}</strong>
+              {t.add3}
             </span>
           </li>
         </ol>

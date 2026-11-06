@@ -1,3 +1,5 @@
+import type { Locale } from "./i18n";
+import type { TicketTier } from "./tickets";
 import { isCategory, type CategoryKey } from "./types";
 
 // Offres vues depuis l'espace pro et l'administration : toutes les étapes du cycle de validation,
@@ -5,12 +7,21 @@ import { isCategory, type CategoryKey } from "./types";
 
 export type OfferStatus = "draft" | "pending" | "published" | "rejected" | "archived";
 
-export const STATUS_LABEL: Record<OfferStatus, string> = {
-  draft: "Brouillon",
-  pending: "En attente de validation",
-  published: "En ligne",
-  rejected: "Refusée",
-  archived: "Retirée",
+export const STATUS_LABEL: Record<Locale, Record<OfferStatus, string>> = {
+  fr: {
+    draft: "Brouillon",
+    pending: "En attente de validation",
+    published: "En ligne",
+    rejected: "Refusée",
+    archived: "Retirée",
+  },
+  en: {
+    draft: "Draft",
+    pending: "Awaiting review",
+    published: "Live",
+    rejected: "Rejected",
+    archived: "Withdrawn",
+  },
 };
 
 export type ManagedOffer = {
@@ -23,6 +34,8 @@ export type ManagedOffer = {
   imageUrl: string;
   priceOriginal: number | null;
   priceOffer: number;
+  tickets: TicketTier[] | null;
+  presaleUntil: string | null;
   conditions: string | null;
   location: string;
   mapUrl: string | null;
@@ -54,6 +67,8 @@ export type ManagedOfferRow = {
   image_url: string;
   price_original: number | null;
   price_offer: number;
+  ticket_tiers: TicketTier[] | null;
+  presale_until: string | null;
   conditions: string | null;
   location: string;
   map_url: string | null;
@@ -80,6 +95,8 @@ export function toManaged(row: ManagedOfferRow): ManagedOffer | null {
     imageUrl: row.image_url,
     priceOriginal: row.price_original,
     priceOffer: row.price_offer,
+    tickets: row.ticket_tiers,
+    presaleUntil: row.presale_until,
     conditions: row.conditions,
     location: row.location,
     mapUrl: row.map_url,

@@ -4,20 +4,29 @@ import { Suspense } from "react";
 import { BackButton } from "@/components/back-button";
 import { Unavailable } from "@/components/form-ui";
 import { requireAdmin } from "@/lib/auth";
+import { getLocale } from "@/lib/locale";
 import { toManaged, type ManagedOfferRow } from "@/lib/managed";
 import { getToday } from "@/lib/offers";
 import { isSupabaseConfigured } from "@/lib/supabase-server";
 import { OfferForm } from "../../../espace-pro/offer-form";
 import { adminSaveOffer } from "../../actions";
 
-export const metadata: Metadata = { title: "Modifier l'offre (admin)" };
+const TITLES = {
+  fr: { meta: "Modifier l'offre (admin)", heading: "Modifier l'offre" },
+  en: { meta: "Edit deal (admin)", heading: "Edit deal" },
+};
 
-export default function AdminModifierOffrePage({ params }: PageProps<"/admin/offres/[id]">) {
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: TITLES[await getLocale()].meta };
+}
+
+export default async function AdminModifierOffrePage({ params }: PageProps<"/[lang]/admin/offres/[id]">) {
+  const { heading } = TITLES[await getLocale()];
   return (
     <>
       <header className="flex items-center gap-2 px-2 py-3">
         <BackButton fallback="/admin" />
-        <h1 className="text-xl font-extrabold md:text-2xl">Modifier l&apos;offre</h1>
+        <h1 className="text-xl font-extrabold md:text-2xl">{heading}</h1>
       </header>
       <Suspense fallback={<div className="m-5 h-96 animate-pulse rounded-2xl bg-surface" aria-hidden />}>
         <Content params={params} />
@@ -26,7 +35,7 @@ export default function AdminModifierOffrePage({ params }: PageProps<"/admin/off
   );
 }
 
-async function Content({ params }: { params: PageProps<"/admin/offres/[id]">["params"] }) {
+async function Content({ params }: { params: PageProps<"/[lang]/admin/offres/[id]">["params"] }) {
   if (!isSupabaseConfigured()) return <Unavailable />;
   const { id } = await params;
   const { supabase } = await requireAdmin();

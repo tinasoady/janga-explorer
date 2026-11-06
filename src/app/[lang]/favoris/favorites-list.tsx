@@ -3,13 +3,31 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Heart } from "lucide-react";
+import { useLocale } from "@/components/locale-provider";
 import { OfferRow } from "@/components/offer-card";
 import { syncFavoritesWithAccount, useFavorites } from "@/lib/favorites";
 import { todayIso } from "@/lib/format";
+import { messages } from "@/lib/i18n";
 import type { Offer } from "@/lib/types";
+
+const T = messages({
+  fr: {
+    emptyTitle: "Aucun favori pour l'instant",
+    emptyText: "Touchez le cœur d'une offre pour la retrouver ici.",
+    emptyCta: "Découvrir les bons plans",
+    expired: (n: number) => `${n} offre${n > 1 ? "s" : ""} enregistrée${n > 1 ? "s ont" : " a"} expiré.`,
+  },
+  en: {
+    emptyTitle: "No saved deals yet",
+    emptyText: "Tap the heart on a deal to find it here.",
+    emptyCta: "Discover the deals",
+    expired: (n: number) => `${n} saved deal${n > 1 ? "s have" : " has"} expired.`,
+  },
+});
 
 export function FavoritesList() {
   const favorites = useFavorites();
+  const t = T[useLocale()];
 
   // Récupère les changements faits depuis un autre appareil (seulement si cet appareil est relié à un compte).
   useEffect(() => {
@@ -53,10 +71,10 @@ export function FavoritesList() {
     return (
       <div className="m-4 flex flex-col items-center rounded-2xl bg-surface px-6 py-12 text-center md:mx-auto md:max-w-xl">
         <Heart className="size-10 text-brand" aria-hidden />
-        <p className="mt-3 font-bold">Aucun favori pour l&apos;instant</p>
-        <p className="mt-1 text-sm text-muted">Touchez le cœur d&apos;une offre pour la retrouver ici.</p>
+        <p className="mt-3 font-bold">{t.emptyTitle}</p>
+        <p className="mt-1 text-sm text-muted">{t.emptyText}</p>
         <Link href="/bons-plans" className="mt-5 rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-white">
-          Découvrir les bons plans
+          {t.emptyCta}
         </Link>
       </div>
     );
@@ -71,11 +89,7 @@ export function FavoritesList() {
           </li>
         ))}
       </ul>
-      {expired > 0 && (
-        <p className="text-center text-xs text-muted">
-          {expired} offre{expired > 1 ? "s" : ""} enregistrée{expired > 1 ? "s ont" : " a"} expiré.
-        </p>
-      )}
+      {expired > 0 && <p className="text-center text-xs text-muted">{t.expired(expired)}</p>}
     </div>
   );
 }

@@ -3,19 +3,26 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Heart, House, Tag, User } from "lucide-react";
+import { messages } from "@/lib/i18n";
+import { useLocale } from "./locale-provider";
+
+const T = messages({
+  fr: { nav: "Navigation principale", home: "Accueil", deals: "Bons plans", favorites: "Favoris", profile: "Profil" },
+  en: { nav: "Main navigation", home: "Home", deals: "Deals", favorites: "Saved", profile: "Profile" },
+});
 
 const ITEMS = [
-  { href: "/", label: "Accueil", icon: House, match: (p: string) => p === "/" },
+  { href: "/", label: "home", icon: House, match: (p: string) => p === "/" },
   {
     href: "/bons-plans",
-    label: "Bons plans",
+    label: "deals",
     icon: Tag,
     match: (p: string) => p.startsWith("/bons-plans") || p.startsWith("/offres"),
   },
-  { href: "/favoris", label: "Favoris", icon: Heart, match: (p: string) => p.startsWith("/favoris") },
+  { href: "/favoris", label: "favorites", icon: Heart, match: (p: string) => p.startsWith("/favoris") },
   {
     href: "/profil",
-    label: "Profil",
+    label: "profile",
     icon: User,
     match: (p: string) =>
       [
@@ -31,14 +38,15 @@ const ITEMS = [
         "/conditions",
       ].some((prefix) => p.startsWith(prefix)),
   },
-];
+] as const;
 
 export function BottomNav() {
   const pathname = usePathname();
+  const t = T[useLocale()];
 
   return (
     <nav
-      aria-label="Navigation principale"
+      aria-label={t.nav}
       className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >
       <ul className="grid grid-cols-4">
@@ -54,7 +62,7 @@ export function BottomNav() {
                 }`}
               >
                 <Icon className={`size-[22px] ${active ? "fill-brand/15" : ""}`} strokeWidth={active ? 2.3 : 1.8} />
-                {label}
+                {t[label]}
               </Link>
             </li>
           );

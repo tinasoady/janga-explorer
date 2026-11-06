@@ -2,14 +2,39 @@ import Form from "next/form";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Heart, MapPin, Plus, Search, User } from "lucide-react";
+import { messages } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import { CategoryBar, CategoryBarLinks } from "./header-nav";
+import { LanguageSwitcher } from "./language-switcher";
 import { Logo } from "./logo";
+
+const T = messages({
+  fr: {
+    search: "Rechercher un bon plan",
+    placeholder: "Rechercher un bon plan…",
+    account: "Mon compte",
+    favorites: "Mes favoris",
+    publish: "Publier",
+    anOffer: " une offre",
+    sections: "Rubriques",
+  },
+  en: {
+    search: "Search for a deal",
+    placeholder: "Search for a deal…",
+    account: "My account",
+    favorites: "My saved deals",
+    publish: "Post",
+    anOffer: " a deal",
+    sections: "Sections",
+  },
+});
 
 /**
  * En-tête de tablette et d'ordinateur, en deux étages : logo, recherche et compte, puis le bandeau bleu des
  * rubriques, qui reste collé en haut au défilement. Masqué sur téléphone, où la navigation est en bas de l'écran.
  */
-export function SiteHeader() {
+export async function SiteHeader() {
+  const t = T[await getLocale()];
   return (
     <>
       <header className="hidden bg-white md:block">
@@ -24,11 +49,11 @@ export function SiteHeader() {
 
           <Form action="/bons-plans" className="min-w-0 flex-1 lg:max-w-md">
             <label className="flex items-center gap-3 rounded-md bg-surface px-4 py-3 ring-sea/40 focus-within:ring-2">
-              <span className="sr-only">Rechercher un bon plan</span>
+              <span className="sr-only">{t.search}</span>
               <input
                 name="q"
                 type="search"
-                placeholder="Rechercher un bon plan…"
+                placeholder={t.placeholder}
                 className="w-full min-w-0 bg-transparent text-[15px] outline-none placeholder:text-ink/60"
               />
               <Search className="size-5 shrink-0 text-ink" aria-hidden />
@@ -36,20 +61,21 @@ export function SiteHeader() {
           </Form>
 
           <div className="ml-auto flex shrink-0 items-center gap-1 lg:gap-2">
+            <LanguageSwitcher className="mr-1 lg:mr-2" />
             <Link
               href="/profil"
-              aria-label="Mon compte"
+              aria-label={t.account}
               className="flex items-center gap-2 rounded-md p-2 text-ink transition hover:text-sea"
             >
               <span className="grid size-8 place-items-center rounded-full border-2 border-current">
                 <User className="size-4" strokeWidth={2.4} aria-hidden />
               </span>
-              <span className="hidden text-[15px] font-semibold lg:inline">Mon compte</span>
+              <span className="hidden text-[15px] font-semibold lg:inline">{t.account}</span>
             </Link>
             <span className="h-7 w-px bg-line" aria-hidden />
             <Link
               href="/favoris"
-              aria-label="Mes favoris"
+              aria-label={t.favorites}
               className="grid size-11 place-items-center rounded-md text-ink transition hover:text-brand"
             >
               <Heart className="size-6" strokeWidth={2} aria-hidden />
@@ -60,14 +86,15 @@ export function SiteHeader() {
             >
               <Plus className="size-4" strokeWidth={3} aria-hidden />
               <span>
-                Publier<span className="hidden lg:inline"> une offre</span>
+                {t.publish}
+                <span className="hidden lg:inline">{t.anOffer}</span>
               </span>
             </Link>
           </div>
         </div>
       </header>
 
-      <nav aria-label="Rubriques" className="sticky top-0 z-40 hidden bg-sea shadow-md md:block">
+      <nav aria-label={t.sections} className="sticky top-0 z-40 hidden bg-sea shadow-md md:block">
         <div className="mx-auto max-w-6xl px-4 lg:px-8">
           {/* usePathname() et useSearchParams() ne sont connus qu'à la requête */}
           <Suspense fallback={<CategoryBarLinks />}>

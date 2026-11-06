@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { setFavoriteRemote, syncFavorites } from "@/app/favoris/actions";
+import { setFavoriteRemote, syncFavorites } from "@/app/[lang]/favoris/actions";
 
 // Favoris stockés dans le navigateur : aucun compte nécessaire. Avec un compte, ils sont aussi
 // enregistrés côté serveur pour être retrouvés sur tous les appareils.

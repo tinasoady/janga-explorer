@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Locale } from "./i18n";
 import { checkImage } from "./pro-forms";
 
 const BUCKET = "offer-images";
@@ -9,8 +10,13 @@ export type UploadedImage = { ok: true; url: string; path: string } | { ok: fals
  * Envoie la photo d'une offre dans le dossier de la personne connectée (`<user_id>/…`, imposé par les règles du
  * bucket) et renvoie son adresse publique. À appeler après avoir vérifié que `file` est bien un fichier non vide.
  */
-export async function uploadOfferImage(supabase: SupabaseClient, userId: string, file: File): Promise<UploadedImage> {
-  const image = await checkImage(file);
+export async function uploadOfferImage(
+  supabase: SupabaseClient,
+  userId: string,
+  file: File,
+  locale: Locale = "fr",
+): Promise<UploadedImage> {
+  const image = await checkImage(file, locale);
   if (!image.ok) return image;
 
   const path = `${userId}/${crypto.randomUUID()}.${image.ext}`;
@@ -18,7 +24,12 @@ export async function uploadOfferImage(supabase: SupabaseClient, userId: string,
     contentType: file.type,
     cacheControl: "31536000",
   });
-  if (error) return { ok: false, error: "L'envoi de la photo a échoué. Réessayez dans un instant." };
+  if (error) {
+    return {
+      ok: false,
+      error: locale === "en" ? "The photo upload failed. Please try again in a moment." : "L'envoi de la photo a échoué. Réessayez dans un instant.",
+    };
+  }
 
   return { ok: true, url: supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl, path };
 }

@@ -1,11 +1,22 @@
+"use client";
+
+// Composant client : les cartes sont aussi affichées par la liste des favoris, rendue dans le navigateur.
 import Image from "next/image";
 import Link from "next/link";
 import { CalendarDays, Clock, Flame, MapPin, ShieldCheck, Sparkles } from "lucide-react";
 import { discountPercent, formatAriary, formatShortDate } from "@/lib/format";
 import { offerHighlight, type HighlightTone } from "@/lib/highlight";
+import { messages } from "@/lib/i18n";
+import { hasSeveralPrices } from "@/lib/tickets";
 import type { Offer } from "@/lib/types";
 import { CategoryIcon } from "./category";
 import { FavoriteButton } from "./favorite-button";
+import { useLocale } from "./locale-provider";
+
+const T = messages({
+  fr: { verified: "Offre vérifiée", until: (date: string) => `Valable jusqu'au ${date}`, from: "dès" },
+  en: { verified: "Verified deal", until: (date: string) => `Valid until ${date}`, from: "from" },
+});
 
 const BADGE_SIZES = {
   sm: "px-1.5 py-0.5 text-xs",
@@ -35,12 +46,13 @@ export function DiscountBadge({
 }
 
 export function VerifiedBadge({ className = "" }: { className?: string }) {
+  const t = T[useLocale()];
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full bg-verified px-2 py-0.5 text-[10px] font-semibold text-white shadow-sm ${className}`}
     >
       <ShieldCheck className="size-3" aria-hidden />
-      Offre vérifiée
+      {t.verified}
     </span>
   );
 }
@@ -53,7 +65,7 @@ const HIGHLIGHT_STYLE: Record<HighlightTone, { className: string; icon: typeof F
 
 /** « Dernier jour », « Plus que 3 jours », « Nouveau »… Rien si l'offre n'a rien de pressant ni de neuf. */
 export function HighlightBadge({ offer, today, className = "" }: { offer: Offer; today: string; className?: string }) {
-  const highlight = offerHighlight(offer, today);
+  const highlight = offerHighlight(offer, today, useLocale());
   if (!highlight) return null;
   const { className: colors, icon: Icon } = HIGHLIGHT_STYLE[highlight.tone];
   return (
@@ -67,12 +79,24 @@ export function HighlightBadge({ offer, today, className = "" }: { offer: Offer;
 }
 
 function Prices({ offer }: { offer: Offer }) {
+  const locale = useLocale();
   return (
     <p className="flex flex-wrap items-baseline gap-x-2">
+      {hasSeveralPrices(offer) && <span className="text-xs text-muted">{T[locale].from}</span>}
       {offer.priceOriginal && offer.priceOriginal > offer.priceOffer && (
-        <span className="text-xs text-muted line-through">{formatAriary(offer.priceOriginal)}</span>
+        <span className="text-xs text-muted line-through">{formatAriary(offer.priceOriginal, locale)}</span>
       )}
-      <span className="text-base font-extrabold text-brand">{formatAriary(offer.priceOffer)}</span>
+      <span className="text-base font-extrabold text-brand">{formatAriary(offer.priceOffer, locale)}</span>
+    </p>
+  );
+}
+
+function ValidUntil({ offer }: { offer: Offer }) {
+  const locale = useLocale();
+  return (
+    <p className="flex items-center gap-1.5 text-[11px] text-muted">
+      <CalendarDays className="size-3.5" aria-hidden />
+      {T[locale].until(formatShortDate(offer.validUntil, locale))}
     </p>
   );
 }
@@ -104,10 +128,7 @@ export function OfferCard({ offer, today }: { offer: Offer; today?: string }) {
           <span className="line-clamp-1">{offer.business.name}</span>
         </p>
         <Prices offer={offer} />
-        <p className="flex items-center gap-1.5 text-[11px] text-muted">
-          <CalendarDays className="size-3.5" aria-hidden />
-          Valable jusqu&apos;au {formatShortDate(offer.validUntil)}
-        </p>
+        <ValidUntil offer={offer} />
       </div>
     </article>
   );
@@ -139,10 +160,7 @@ export function OfferRow({ offer, today }: { offer: Offer; today?: string }) {
         </p>
         <div className="mt-auto">
           <Prices offer={offer} />
-          <p className="flex items-center gap-1.5 text-[11px] text-muted">
-            <CalendarDays className="size-3.5" aria-hidden />
-            Valable jusqu&apos;au {formatShortDate(offer.validUntil)}
-          </p>
+          <ValidUntil offer={offer} />
         </div>
       </div>
       <FavoriteButton slug={offer.slug} className="absolute top-2 right-2 z-10 size-8" />

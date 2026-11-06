@@ -5,28 +5,108 @@ import { Bell, ChevronRight, Heart, Info, LogOut, ShieldCheck, Store, UserRound 
 import { ContactLinks } from "@/components/contact-links";
 import { FavoritesSync } from "@/components/favorites-sync";
 import { InstallAppCard } from "@/components/install-app";
-import { LEGAL_PAGES } from "@/components/legal-page";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { legalPages } from "@/components/legal-page";
 import { secondaryButtonClass } from "@/components/form-ui";
 import { LogoMark } from "@/components/logo";
 import { SubmitButton } from "@/components/submit-button";
 import { getSessionUser, isAdminRole, ROLE_LABEL, type ProStatus } from "@/lib/auth";
+import { messages } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import { isSupabaseConfigured } from "@/lib/supabase-server";
 import { signOut } from "../connexion/actions";
 
-export const metadata: Metadata = { title: "Profil" };
+const T = messages<{
+  title: string;
+  language: string;
+  promiseTitle: string;
+  promise: string;
+  contact: string;
+  legal: string;
+  proStatus: Record<ProStatus, string>;
+  welcome: string;
+  noAccount: string;
+  areYouPro: string;
+  proText: string;
+  requestPro: string;
+  signIn: string;
+  favorites: string;
+  alerts: string;
+  proSpace: string;
+  about: string;
+  admin: string;
+  signOut: string;
+}>({
+  fr: {
+    title: "Profil",
+    language: "Langue",
+    promiseTitle: "Notre engagement",
+    promise:
+      "Chaque offre affiche son prix, ses conditions et sa date de fin. Le badge « Offre vérifiée » signifie que nous avons confirmé ces informations directement avec l'établissement. Les offres expirées disparaissent automatiquement.",
+    contact: "Nous contacter",
+    legal: "Informations légales",
+    proStatus: {
+      none: "Connecté",
+      pending: "Compte pro en cours de vérification",
+      approved: "Compte professionnel",
+      rejected: "Demande de compte pro refusée",
+    },
+    welcome: "Bienvenue sur Janga Explorer",
+    noAccount: "Pas besoin de compte pour profiter des bons plans.",
+    areYouPro: "Vous êtes professionnel ?",
+    proText:
+      "Hôtel, restaurant, activité ou événement à Mahajanga : demandez un compte pour publier vos offres. Nous vérifions votre établissement avant d'activer le compte.",
+    requestPro: "Demander un compte pro",
+    signIn: "Se connecter",
+    favorites: "Mes favoris",
+    alerts: "Mes alertes",
+    proSpace: "Espace professionnel",
+    about: "À propos de nous",
+    admin: "Administration",
+    signOut: "Se déconnecter",
+  },
+  en: {
+    title: "Profile",
+    language: "Language",
+    promiseTitle: "Our promise",
+    promise:
+      "Every deal shows its price, conditions and end date. The \"Verified deal\" badge means we confirmed this information directly with the business. Expired deals disappear automatically.",
+    contact: "Contact us",
+    legal: "Legal information",
+    proStatus: {
+      none: "Signed in",
+      pending: "Business account being reviewed",
+      approved: "Business account",
+      rejected: "Business account request declined",
+    },
+    welcome: "Welcome to Janga Explorer",
+    noAccount: "You don't need an account to enjoy the deals.",
+    areYouPro: "Do you run a business?",
+    proText:
+      "Hotel, restaurant, activity or event in Mahajanga: request an account to post your deals. We check your business before activating the account.",
+    requestPro: "Request a business account",
+    signIn: "Sign in",
+    favorites: "My saved deals",
+    alerts: "My alerts",
+    proSpace: "Business space",
+    about: "About us",
+    admin: "Administration",
+    signOut: "Sign out",
+  },
+});
 
-const PRO_STATUS_LABEL: Record<ProStatus, string> = {
-  none: "Connecté",
-  pending: "Compte pro en cours de vérification",
-  approved: "Compte professionnel",
-  rejected: "Demande de compte pro refusée",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: T[await getLocale()].title };
+}
 
-export default function ProfilPage() {
+export default async function ProfilPage() {
+  const locale = await getLocale();
+  const t = T[locale];
   return (
     <>
-      <header className="border-b border-line px-4 py-4">
-        <h1 className="text-xl font-extrabold">Profil</h1>
+      <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-4">
+        <h1 className="text-xl font-extrabold">{t.title}</h1>
+        <LanguageSwitcher />
       </header>
 
       <div className="space-y-6 p-4">
@@ -39,22 +119,18 @@ export default function ProfilPage() {
         <section className="space-y-2 text-sm text-muted">
           <p className="flex items-center gap-2 font-bold text-ink">
             <ShieldCheck className="size-5 text-verified" aria-hidden />
-            Notre engagement
+            {t.promiseTitle}
           </p>
-          <p>
-            Chaque offre affiche son prix, ses conditions et sa date de fin. Le badge « Offre vérifiée » signifie que
-            nous avons confirmé ces informations directement avec l&apos;établissement. Les offres expirées
-            disparaissent automatiquement.
-          </p>
+          <p>{t.promise}</p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-bold">Nous contacter</h2>
+          <h2 className="font-bold">{t.contact}</h2>
           <ContactLinks tone="light" />
         </section>
 
-        <nav aria-label="Informations légales" className="flex flex-wrap gap-x-4 gap-y-2 text-xs font-semibold text-muted">
-          {LEGAL_PAGES.map((p) => (
+        <nav aria-label={t.legal} className="flex flex-wrap gap-x-4 gap-y-2 text-xs font-semibold text-muted">
+          {legalPages(locale).map((p) => (
             <Link key={p.href} href={p.href} className="hover:text-ink">
               {p.label}
             </Link>
@@ -78,7 +154,8 @@ function MenuLink({ href, icon: Icon, label }: { href: string; icon: typeof Hear
 }
 
 async function Account() {
-  const user = await getSessionUser();
+  const [user, locale] = await Promise.all([getSessionUser(), getLocale()]);
+  const t = T[locale];
 
   return (
     <>
@@ -95,13 +172,13 @@ async function Account() {
             <>
               <p className="truncate font-bold">{user.email}</p>
               <p className="text-sm text-muted">
-                {isAdminRole(user.role) ? ROLE_LABEL[user.role] : PRO_STATUS_LABEL[user.proStatus]}
+                {isAdminRole(user.role) ? ROLE_LABEL[locale][user.role] : t.proStatus[user.proStatus]}
               </p>
             </>
           ) : (
             <>
-              <p className="font-bold">Bienvenue sur Janga Explorer</p>
-              <p className="text-sm text-muted">Pas besoin de compte pour profiter des bons plans.</p>
+              <p className="font-bold">{t.welcome}</p>
+              <p className="text-sm text-muted">{t.noAccount}</p>
             </>
           )}
         </div>
@@ -111,32 +188,29 @@ async function Account() {
         <section className="space-y-3 rounded-2xl border border-dashed border-line p-4">
           <p className="flex items-center gap-2 font-bold">
             <Bell className="size-5 text-sea" aria-hidden />
-            Vous êtes professionnel ?
+            {t.areYouPro}
           </p>
-          <p className="text-sm text-muted">
-            Hôtel, restaurant, activité ou événement à Mahajanga : demandez un compte pour publier vos offres. Nous
-            vérifions votre établissement avant d&apos;activer le compte.
-          </p>
+          <p className="text-sm text-muted">{t.proText}</p>
           <div className="flex gap-2">
             <Link
               href="/connexion?mode=inscription"
               className="flex-1 rounded-full bg-brand py-2.5 text-center text-sm font-bold text-white"
             >
-              Demander un compte pro
+              {t.requestPro}
             </Link>
             <Link href="/connexion" className={`${secondaryButtonClass} flex-1`}>
-              Se connecter
+              {t.signIn}
             </Link>
           </div>
         </section>
       )}
 
       <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line">
-        <MenuLink href="/favoris" icon={Heart} label="Mes favoris" />
-        {user && <MenuLink href="/alertes" icon={Bell} label="Mes alertes" />}
-        <MenuLink href="/pro" icon={Store} label="Espace professionnel" />
-        <MenuLink href="/a-propos" icon={Info} label="À propos de nous" />
-        {user && isAdminRole(user.role) && <MenuLink href="/admin" icon={ShieldCheck} label="Administration" />}
+        <MenuLink href="/favoris" icon={Heart} label={t.favorites} />
+        {user && <MenuLink href="/alertes" icon={Bell} label={t.alerts} />}
+        <MenuLink href="/pro" icon={Store} label={t.proSpace} />
+        <MenuLink href="/a-propos" icon={Info} label={t.about} />
+        {user && isAdminRole(user.role) && <MenuLink href="/admin" icon={ShieldCheck} label={t.admin} />}
       </ul>
 
       {user && (
@@ -145,7 +219,7 @@ async function Account() {
           <form action={signOut}>
             <SubmitButton className={`${secondaryButtonClass} w-full`}>
               <LogOut className="size-4" aria-hidden />
-              Se déconnecter
+              {t.signOut}
             </SubmitButton>
           </form>
         </>

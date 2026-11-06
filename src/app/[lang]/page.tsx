@@ -4,24 +4,70 @@ import Form from "next/form";
 import { ArrowRight, BadgeCheck, MapPin, MessageCircle, Search, Store, Wallet } from "lucide-react";
 import { CATEGORY_STYLE } from "@/components/category";
 import { DealOfTheDay } from "@/components/deal-of-the-day";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { Logo } from "@/components/logo";
 import { OfferCard } from "@/components/offer-card";
 import { SectionTitle } from "@/components/section-title";
 import { formatAriary } from "@/lib/format";
 import { isLastChance } from "@/lib/highlight";
+import { messages } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import { getActiveOffers, getPublicPricing, getToday, getWeekendOffers, pickDealOfTheDay } from "@/lib/offers";
 import { CATEGORIES, type Offer } from "@/lib/types";
 
 const HERO_IMAGE =
   "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=2400&q=80&auto=format&fit=crop";
 
+const T = messages({
+  fr: {
+    proSpace: "Espace pro",
+    heroTitle: "Les bons plans",
+    heroText: "Des bons plans pour tous vos moments !",
+    live: (n: number) => `${n} bon${n > 1 ? "s" : ""} plan${n > 1 ? "s" : ""} en ce moment`,
+    search: "Rechercher un bon plan",
+    searchPlaceholder: "Tu cherches quoi aujourd'hui ?",
+    categories: "Catégories",
+    promises: ["Chaque offre relue avant publication", "Contact direct sur WhatsApp", "Aucun frais pour vous"],
+    featured: "Les bons plans du moment",
+    lastChance: "Dernière chance",
+    weekend: "Ce week-end à Mahajanga",
+    seeAll: "Voir tout",
+    proTitle: "Vous êtes restaurateur, hôtelier ou organisateur ?",
+    proText: "Publiez vos offres sur Janga Explorer et touchez les habitants et visiteurs de Mahajanga.",
+    proDays: (price: string) => `Un événement de quelques jours ? Publiez-le pour ${price} par jour, sans abonnement.`,
+    proCta: "Publier une offre",
+  },
+  en: {
+    proSpace: "For businesses",
+    heroTitle: "The best deals",
+    heroText: "Great deals for every moment!",
+    live: (n: number) => `${n} deal${n > 1 ? "s" : ""} right now`,
+    search: "Search for a deal",
+    searchPlaceholder: "What are you looking for today?",
+    categories: "Categories",
+    promises: ["Every deal reviewed before going live", "Contact businesses directly on WhatsApp", "No fees for you"],
+    featured: "Deals of the moment",
+    lastChance: "Last chance",
+    weekend: "This weekend in Mahajanga",
+    seeAll: "See all",
+    proTitle: "Do you run a restaurant, a hotel or events?",
+    proText: "Post your deals on Janga Explorer and reach Mahajanga's residents and visitors.",
+    proDays: (price: string) => `Running an event for a few days? Post it for ${price} per day, no subscription needed.`,
+    proCta: "Post a deal",
+  },
+});
+
+const PROMISE_ICONS = [BadgeCheck, MessageCircle, Wallet];
+
 export default async function HomePage() {
-  const [offers, weekend, today, pricing] = await Promise.all([
+  const [offers, weekend, today, pricing, locale] = await Promise.all([
     getActiveOffers(),
     getWeekendOffers(),
     getToday(),
     getPublicPricing(),
+    getLocale(),
   ]);
+  const t = T[locale];
   const deal = pickDealOfTheDay(offers, today);
   // Le bon plan du jour a sa propre carte : on ne le répète pas juste en dessous.
   const featured = offers.filter((o) => o.isFeatured && o.id !== deal?.id);
@@ -40,15 +86,18 @@ export default async function HomePage() {
             Mahajanga
           </p>
         </div>
-        <Link
-          href="/pro"
-          aria-label="Espace pro"
-          className="flex shrink-0 items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-ink"
-        >
-          <Store className="size-4" aria-hidden />
-          {/* Sur les plus petits écrans (320 px), l'icône seule laisse la place au logo */}
-          <span className="max-[359px]:hidden">Espace pro</span>
-        </Link>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <LanguageSwitcher className="[&>svg]:hidden" />
+          <Link
+            href="/pro"
+            aria-label={t.proSpace}
+            className="flex shrink-0 items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-ink"
+          >
+            <Store className="size-4" aria-hidden />
+            {/* Sur les plus petits écrans, l'icône seule laisse la place au logo et au choix de la langue */}
+            <span className="max-[399px]:hidden">{t.proSpace}</span>
+          </Link>
+        </div>
       </header>
 
       {/* Téléphone : carte arrondie. Tablette et ordinateur : bandeau pleine largeur de l'écran, titre en grand et
@@ -60,32 +109,32 @@ export default async function HomePage() {
           <h1 className="text-white drop-shadow md:drop-shadow-lg">
             <span className="block font-script text-4xl md:text-4xl lg:text-5xl">Mahajanga</span>
             <span className="hidden font-display text-[clamp(4.5rem,10vw,9rem)] leading-[0.95] font-bold tracking-tight uppercase md:mt-2 md:block">
-              Les bons plans
+              {t.heroTitle}
             </span>
           </h1>
           <p className="mt-2 max-w-[13rem] text-[15px] leading-snug font-semibold text-white drop-shadow md:mt-4 md:max-w-xl md:text-xl md:text-balance lg:text-2xl">
-            Des bons plans pour tous vos moments !
+            {t.heroText}
           </p>
           {offers.length > 0 && (
             <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm md:mt-5 md:text-sm">
               <span className="size-2 animate-pulse rounded-full bg-sun" aria-hidden />
-              {offers.length} bon{offers.length > 1 ? "s" : ""} plan{offers.length > 1 ? "s" : ""} en ce moment
+              {t.live(offers.length)}
             </p>
           )}
           <Form action="/bons-plans" className="mt-6 md:hidden">
             <label className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 shadow-lg">
               <Search className="size-5 text-muted" aria-hidden />
-              <span className="sr-only">Rechercher un bon plan</span>
+              <span className="sr-only">{t.search}</span>
               <input
                 name="q"
                 type="search"
-                placeholder="Tu cherches quoi aujourd'hui ?"
+                placeholder={t.searchPlaceholder}
                 className="w-full bg-transparent text-sm outline-none placeholder:text-muted"
               />
             </label>
           </Form>
 
-          <nav aria-label="Catégories" className="mt-auto hidden pt-10 md:flex md:items-stretch">
+          <nav aria-label={t.categories} className="mt-auto hidden pt-10 md:flex md:items-stretch">
             {CATEGORIES.map((c) => {
               const { icon: Icon } = CATEGORY_STYLE[c.key];
               return (
@@ -97,7 +146,9 @@ export default async function HomePage() {
                   <span className="grid size-14 place-items-center rounded-full border-2 border-white bg-white/10 backdrop-blur-sm transition group-hover:scale-105 group-hover:bg-white group-hover:text-ink lg:size-16">
                     <Icon className="size-7" strokeWidth={1.8} aria-hidden />
                   </span>
-                  <span className="text-xs font-extrabold tracking-wide uppercase drop-shadow lg:text-sm">{c.tile}</span>
+                  <span className="text-xs font-extrabold tracking-wide uppercase drop-shadow lg:text-sm">
+                    {c.tile[locale]}
+                  </span>
                 </Link>
               );
             })}
@@ -105,7 +156,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <nav aria-label="Catégories" className="grid grid-cols-4 gap-2 px-4 pt-5 md:hidden">
+      <nav aria-label={t.categories} className="grid grid-cols-4 gap-2 px-4 pt-5 md:hidden">
         {CATEGORIES.map((c) => {
           const { icon: Icon, bg } = CATEGORY_STYLE[c.key];
           return (
@@ -117,37 +168,37 @@ export default async function HomePage() {
               <span className={`grid size-14 place-items-center rounded-2xl ${bg} text-white shadow-sm`}>
                 <Icon className="size-7" aria-hidden />
               </span>
-              <span className="text-xs font-semibold">{c.tile}</span>
+              <span className="text-center text-xs font-semibold">{c.tile[locale]}</span>
             </Link>
           );
         })}
       </nav>
 
       <ul className="no-scrollbar mt-5 flex gap-2 overflow-x-auto px-4 text-xs font-semibold md:mt-8 md:justify-center md:gap-8 md:text-sm">
-        {PROMISES.map(({ icon: Icon, text }) => (
-          <li key={text} className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3 py-1.5 shadow-sm md:bg-transparent md:shadow-none">
-            <Icon className="size-4 text-verified" aria-hidden />
-            {text}
-          </li>
-        ))}
+        {t.promises.map((text, i) => {
+          const Icon = PROMISE_ICONS[i];
+          return (
+            <li key={text} className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3 py-1.5 shadow-sm md:bg-transparent md:shadow-none">
+              <Icon className="size-4 text-verified" aria-hidden />
+              {text}
+            </li>
+          );
+        })}
       </ul>
 
       {deal && <DealOfTheDay offer={deal} today={today} />}
-      <Carousel title="Les bons plans du moment" href="/bons-plans" offers={featured} today={today} />
-      <Carousel title="Dernière chance" href="/bons-plans?sort=fin" offers={lastChance} today={today} />
-      <Carousel title="Ce week-end à Mahajanga" href="/bons-plans" offers={weekend} today={today} />
+      <Carousel title={t.featured} seeAll={t.seeAll} href="/bons-plans" offers={featured} today={today} />
+      <Carousel title={t.lastChance} seeAll={t.seeAll} href="/bons-plans?sort=fin" offers={lastChance} today={today} />
+      <Carousel title={t.weekend} seeAll={t.seeAll} href="/bons-plans" offers={weekend} today={today} />
 
       <section className="mx-4 mt-8 rounded-3xl bg-brand-soft p-5 md:flex md:items-center md:justify-between md:gap-8 md:p-8 lg:mt-12">
         <div>
-          <h2 className="text-lg font-extrabold md:text-2xl">Vous êtes restaurateur, hôtelier ou organisateur ?</h2>
-          <p className="mt-1 text-sm text-ink/80 md:text-base">
-            Publiez vos offres sur Janga Explorer et touchez les habitants et visiteurs de Mahajanga.
-          </p>
+          <h2 className="text-lg font-extrabold md:text-2xl">{t.proTitle}</h2>
+          <p className="mt-1 text-sm text-ink/80 md:text-base">{t.proText}</p>
           {pricing && (
             <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-ink md:text-base">
               <Wallet className="size-4 shrink-0 text-brand" aria-hidden />
-              Un événement de quelques jours ? Publiez-le pour {formatAriary(pricing.dayPrice)} par jour, sans
-              abonnement.
+              {t.proDays(formatAriary(pricing.dayPrice, locale))}
             </p>
           )}
         </div>
@@ -155,7 +206,7 @@ export default async function HomePage() {
           href="/pro"
           className="mt-4 inline-flex shrink-0 items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-bold text-white md:mt-0 md:px-6 md:py-3 md:text-base"
         >
-          Publier une offre
+          {t.proCta}
           <ArrowRight className="size-4" aria-hidden />
         </Link>
       </section>
@@ -163,20 +214,26 @@ export default async function HomePage() {
   );
 }
 
-const PROMISES = [
-  { icon: BadgeCheck, text: "Chaque offre relue avant publication" },
-  { icon: MessageCircle, text: "Contact direct sur WhatsApp" },
-  { icon: Wallet, text: "Aucun frais pour vous" },
-];
-
-function Carousel({ title, href, offers, today }: { title: string; href: string; offers: Offer[]; today: string }) {
+function Carousel({
+  title,
+  seeAll,
+  href,
+  offers,
+  today,
+}: {
+  title: string;
+  seeAll: string;
+  href: string;
+  offers: Offer[];
+  today: string;
+}) {
   if (offers.length === 0) return null;
   return (
     <section className="pt-7 md:pt-12">
       <div className="flex items-center justify-between gap-3 px-4 pb-3 md:items-end md:pb-5">
         <SectionTitle>{title}</SectionTitle>
         <Link href={href} className="flex shrink-0 items-center gap-1 text-sm font-semibold whitespace-nowrap text-sea md:pb-3 md:hover:text-sea-dark">
-          Voir tout
+          {seeAll}
           <ArrowRight className="size-4" aria-hidden />
         </Link>
       </div>

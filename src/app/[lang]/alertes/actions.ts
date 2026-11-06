@@ -3,15 +3,31 @@
 import { redirect } from "next/navigation";
 import { refresh } from "next/cache";
 import { requireUser } from "@/lib/auth";
+import { messages } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/locale";
 import { BUDGETS, isCategory } from "@/lib/types";
 
 export type AlertState = { error?: string } | null;
 
 const MAX_ALERTS = 10;
+
+const T = messages({
+  fr: {
+    empty: "Choisissez au moins une catégorie, un budget ou un mot-clé.",
+    tooMany: `Vous pouvez créer ${MAX_ALERTS} alertes au maximum. Supprimez-en une d'abord.`,
+    failed: "Création impossible. Réessayez dans un instant.",
+  },
+  en: {
+    empty: "Choose at least a category, a budget or a keyword.",
+    tooMany: `You can create up to ${MAX_ALERTS} alerts. Delete one first.`,
+    failed: "Couldn't create the alert. Please try again in a moment.",
+  },
+});
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function createAlert(_prev: AlertState, formData: FormData): Promise<AlertState> {
   const { user, supabase } = await requireUser("/alertes");
+  const t = T[await getRequestLocale()];
 
   const category = String(formData.get("cat") ?? "");
   const max = Number(formData.get("max"));
@@ -24,16 +40,16 @@ export async function createAlert(_prev: AlertState, formData: FormData): Promis
     query: query || null,
   };
   if (!row.category && !row.max_price && !row.query) {
-    return { error: "Choisissez au moins une catégorie, un budget ou un mot-clé." };
+    return { error: t.empty };
   }
 
   const { count } = await supabase.from("alerts").select("id", { count: "exact", head: true });
   if ((count ?? 0) >= MAX_ALERTS) {
-    return { error: `Vous pouvez créer ${MAX_ALERTS} alertes au maximum. Supprimez-en une d'abord.` };
+    return { error: t.tooMany };
   }
 
   const { error } = await supabase.from("alerts").insert(row);
-  if (error) return { error: "Création impossible. Réessayez dans un instant." };
+  if (error) return { error: t.failed };
   redirect("/alertes");
 }
 

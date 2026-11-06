@@ -1,10 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
+import { DEMO_MODE } from "./supabase";
 
-/** Vrai quand les variables Supabase sont définies (sinon l'application reste en mode démonstration). */
+/** Vrai quand les variables Supabase sont définies, hors démonstration forcée (sinon l'application est en démonstration). */
 export function isSupabaseConfigured() {
-  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  return !DEMO_MODE && Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 }
 
 /**
@@ -14,7 +15,7 @@ export function isSupabaseConfigured() {
 export async function createServerSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
+  if (!url || !key || DEMO_MODE) return null;
 
   // La session dépend de la requête (cookies) et Supabase compare son jeton à l'heure courante : on déclare
   // l'accès dynamique avant, sinon Next.js signale une lecture de `Date.now()` pendant le prérendu.

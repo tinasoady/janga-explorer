@@ -45,14 +45,5 @@ export function FormMessage({ error, info }: { error?: string; info?: string }) 
   return null;
 }
 
-/** Message affiché quand Supabase n'est pas configuré (mode démonstration). */
-export function Unavailable() {
-  return (
-    <div className="m-4 rounded-2xl bg-surface p-6 text-center">
-      <p className="font-bold">Bientôt disponible</p>
-      <p className="mt-1 text-sm text-muted">
-        Les comptes sont activés dès que l&apos;application est reliée à sa base de données.
-      </p>
-    </div>
-  );
-}
+// Message du mode démonstration : composant client à part, il dépend de la langue de la page.
+export { Unavailable } from "./unavailable";

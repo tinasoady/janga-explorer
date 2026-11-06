@@ -2,6 +2,8 @@
 
 import { refresh, updateTag } from "next/cache";
 import { requireAdmin, requireSuperadmin } from "@/lib/auth";
+import { messages } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/locale";
 
 export type SettingsState = { error?: string; info?: string } | null;
 
@@ -65,12 +67,34 @@ export async function reactivateSubscription(formData: FormData) {
   refresh();
 }
 
+const T = messages({
+  fr: {
+    monthly: "Le prix doit être un nombre entier d'ariary (10 000 000 Ar maximum).",
+    daily: "Le prix par jour doit être un nombre entier d'ariary (1 000 000 Ar maximum).",
+    trial: "La durée de l'essai doit être comprise entre 0 et 365 jours.",
+    account: "Le nom du bénéficiaire est trop long.",
+    number: "Un numéro de paiement n'est pas valide (ex : 034 12 345 67).",
+    failed: "Enregistrement impossible. Réessayez dans un instant.",
+    saved: "Réglages enregistrés.",
+  },
+  en: {
+    monthly: "The price must be a whole number of ariary (10,000,000 Ar max).",
+    daily: "The price per day must be a whole number of ariary (1,000,000 Ar max).",
+    trial: "The trial must last between 0 and 365 days.",
+    account: "The payee name is too long.",
+    number: "A payment number isn't valid (e.g. 034 12 345 67).",
+    failed: "Couldn't save. Please try again in a moment.",
+    saved: "Settings saved.",
+  },
+});
+
 const digits = (formData: FormData, name: string) => String(formData.get(name) ?? "").replace(/[\s ]/g, "");
 const text = (formData: FormData, name: string) => String(formData.get(name) ?? "").trim();
 
 /** Prix et numéros de paiement. Un nouveau prix vaut pour les paiements déclarés ensuite, pas pour ceux en attente. */
 export async function saveSettings(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
   const { supabase } = await requireSuperadmin(`${PATH}/tarifs`);
+  const t = T[await getRequestLocale()];
 
   const monthlyPrice = Number(digits(formData, "monthlyPrice"));
   const dayPrice = Number(digits(formData, "dayPrice"));
@@ -83,17 +107,17 @@ export async function saveSettings(_prev: SettingsState, formData: FormData): Pr
   };
 
   if (!Number.isInteger(monthlyPrice) || monthlyPrice < 0 || monthlyPrice > 10_000_000) {
-    return { error: "Le prix doit être un nombre entier d'ariary (10 000 000 Ar maximum)." };
+    return { error: t.monthly };
   }
   if (!Number.isInteger(dayPrice) || dayPrice < 0 || dayPrice > 1_000_000) {
-    return { error: "Le prix par jour doit être un nombre entier d'ariary (1 000 000 Ar maximum)." };
+    return { error: t.daily };
   }
   if (!Number.isInteger(trialDays) || trialDays < 0 || trialDays > 365) {
-    return { error: "La durée de l'essai doit être comprise entre 0 et 365 jours." };
+    return { error: t.trial };
   }
-  if (accountName.length > 80) return { error: "Le nom du bénéficiaire est trop long." };
+  if (accountName.length > 80) return { error: t.account };
   if (Object.values(numbers).some((n) => n.length > 30 || (n && !/^[0-9+ ]{8,30}$/.test(n)))) {
-    return { error: "Un numéro de paiement n'est pas valide (ex : 034 12 345 67)." };
+    return { error: t.number };
   }
 
   const { error } = await supabase
@@ -107,10 +131,10 @@ export async function saveSettings(_prev: SettingsState, formData: FormData): Pr
       updated_at: new Date().toISOString(),
     })
     .eq("id", true);
-  if (error) return { error: "Enregistrement impossible. Réessayez dans un instant." };
+  if (error) return { error: t.failed };
 
   // Les prix sont aussi affichés sur l'accueil et la page de présentation pro.
   updateTag("pricing");
   refresh();
-  return { info: "Réglages enregistrés." };
+  return { info: t.saved };
 }

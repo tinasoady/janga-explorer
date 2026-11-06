@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { createServerSupabase } from "./supabase-server";
+import type { Locale } from "./i18n";
 
 export type Role = "user" | "admin" | "superadmin";
 /** État de la demande de compte pro : « none » pour un compte sans demande (ex : compte administrateur). */
@@ -12,10 +13,9 @@ export function isAdminRole(role: Role) {
   return role === "admin" || role === "superadmin";
 }
 
-export const ROLE_LABEL: Record<Role, string> = {
-  user: "Connecté",
-  admin: "Administrateur",
-  superadmin: "Super-administrateur",
+export const ROLE_LABEL: Record<Locale, Record<Role, string>> = {
+  fr: { user: "Connecté", admin: "Administrateur", superadmin: "Super-administrateur" },
+  en: { user: "Signed in", admin: "Administrator", superadmin: "Super administrator" },
 };
 
 /** Chemin interne sûr pour une redirection après connexion (jamais d'URL externe). */

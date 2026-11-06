@@ -4,20 +4,29 @@ import { Suspense } from "react";
 import { BackButton } from "@/components/back-button";
 import { Unavailable } from "@/components/form-ui";
 import { requireProAccess } from "@/lib/auth";
+import { getLocale } from "@/lib/locale";
 import { getToday } from "@/lib/offers";
 import { getMyBusiness } from "@/lib/pro";
 import { canPayPerOffer, canPublish, getMySubscription, getSubscriptionSettings } from "@/lib/subscription";
 import { isSupabaseConfigured } from "@/lib/supabase-server";
 import { OfferForm } from "../../offer-form";
 
-export const metadata: Metadata = { title: "Nouvelle offre" };
+const TITLES = {
+  fr: { meta: "Nouvelle offre", heading: "Nouvelle offre" },
+  en: { meta: "New deal", heading: "New deal" },
+};
 
-export default function NouvelleOffrePage() {
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: TITLES[await getLocale()].meta };
+}
+
+export default async function NouvelleOffrePage() {
+  const { heading } = TITLES[await getLocale()];
   return (
     <>
       <header className="flex items-center gap-2 px-2 py-3">
         <BackButton fallback="/espace-pro" />
-        <h1 className="text-xl font-extrabold">Nouvelle offre</h1>
+        <h1 className="text-xl font-extrabold">{heading}</h1>
       </header>
       <Suspense fallback={<div className="m-5 h-96 animate-pulse rounded-2xl bg-surface" aria-hidden />}>
         <Content />

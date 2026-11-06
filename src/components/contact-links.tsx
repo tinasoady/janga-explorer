@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Mail } from "lucide-react";
 import { whatsappLink } from "@/lib/format";
+import type { Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 // Les réseaux et l'e-mail de Janga Explorer se règlent par variables d'environnement (voir .env.example) :
 // un moyen de contact n'apparaît que si sa variable est renseignée.
@@ -34,7 +36,7 @@ function InstagramIcon({ className = "size-5" }: { className?: string }) {
 type Contact = { key: string; label: string; href: string; icon: ReactNode; external: boolean };
 
 /** Moyens de contact renseignés, dans l'ordre d'affichage. */
-export function getContacts(): Contact[] {
+export function getContacts(locale: Locale = "fr"): Contact[] {
   const whatsapp = process.env.NEXT_PUBLIC_CONTACT_WHATSAPP;
   const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL;
   const facebook = process.env.NEXT_PUBLIC_FACEBOOK_URL;
@@ -45,7 +47,7 @@ export function getContacts(): Contact[] {
       ? {
           key: "whatsapp",
           label: "WhatsApp",
-          href: whatsappLink(whatsapp, "Bonjour Janga Explorer, "),
+          href: whatsappLink(whatsapp, locale === "en" ? "Hello Janga Explorer, " : "Bonjour Janga Explorer, "),
           icon: <WhatsAppIcon />,
           external: true,
         }
@@ -58,8 +60,9 @@ export function getContacts(): Contact[] {
 }
 
 /** Boutons ronds de contact : `dark` dans le pied de page, `light` sur fond clair (profil, téléphone). */
-export function ContactLinks({ tone = "dark" }: { tone?: "dark" | "light" }) {
-  const contacts = getContacts();
+export async function ContactLinks({ tone = "dark" }: { tone?: "dark" | "light" }) {
+  const locale = await getLocale();
+  const contacts = getContacts(locale);
   if (contacts.length === 0) return null;
 
   const button =
@@ -73,7 +76,15 @@ export function ContactLinks({ tone = "dark" }: { tone?: "dark" | "light" }) {
         <li key={c.key}>
           <a
             href={c.href}
-            aria-label={c.key === "email" ? `Nous écrire à ${c.label}` : `Janga Explorer sur ${c.label}`}
+            aria-label={
+              locale === "en"
+                ? c.key === "email"
+                  ? `Email us at ${c.label}`
+                  : `Janga Explorer on ${c.label}`
+                : c.key === "email"
+                  ? `Nous écrire à ${c.label}`
+                  : `Janga Explorer sur ${c.label}`
+            }
             title={c.label}
             {...(c.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
             className={`grid size-10 place-items-center rounded-full transition ${button}`}

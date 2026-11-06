@@ -21,6 +21,8 @@ import {
   type SubscriptionRow,
   type SubscriptionStatus,
 } from "@/lib/subscription";
+import { INTL_LOCALE, messages, type Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import { isSupabaseConfigured } from "@/lib/supabase-server";
 import {
   cancelSubscription,
@@ -31,7 +33,14 @@ import {
 } from "./actions";
 import { RevenueChart, type RevenueMonth } from "./revenue-chart";
 
-export const metadata: Metadata = { title: "Abonnements" };
+const TITLES = {
+  fr: { meta: "Abonnements", heading: "Abonnements" },
+  en: { meta: "Subscriptions", heading: "Subscriptions" },
+};
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: TITLES[await getLocale()].meta };
+}
 
 type ListRow = SubscriptionRow & {
   user_id: string;
@@ -45,16 +54,133 @@ type ListRow = SubscriptionRow & {
 
 type Pro = ListRow & { sub: Subscription };
 
-const FILTERS = [
-  { key: "tous", label: "Tous" },
-  { key: "bientot", label: "Expirent sous 7 jours" },
-  { key: "trial", label: "En essai" },
-  { key: "active", label: "Abonnés" },
-  { key: "expired", label: "Expirés" },
-  { key: "canceled", label: "Annulés" },
-] as const;
+const FILTERS = ["tous", "bientot", "trial", "active", "expired", "canceled"] as const;
 
-type FilterKey = (typeof FILTERS)[number]["key"];
+type FilterKey = (typeof FILTERS)[number];
+
+const T = messages({
+  fr: {
+    filters: {
+      tous: "Tous",
+      bientot: "Expirent sous 7 jours",
+      trial: "En essai",
+      active: "Abonnés",
+      expired: "Expirés",
+      canceled: "Annulés",
+    } as Record<FilterKey, string>,
+    pricing: (month: string, day: string, trial: number) =>
+      `${month} / mois · ${day} / jour et par offre · essai de ${trial} jours`,
+    settings: "Tarifs et numéros",
+    keyFigures: "Chiffres clés",
+    revenueOf: (month: string) => `Revenus de ${month}`,
+    previous: (month: string, amount: string) => `${month} : ${amount}`,
+    subscribers: "Abonnés",
+    inTrial: (n: number) => `${n} en essai`,
+    toCheck: "Paiements à vérifier",
+    expiringSoon: "Expirent sous 7 jours",
+    expired: "Expirés",
+    expiredDetail: "sans abonnement actif",
+    canceled: "Annulés",
+    paymentsToCheck: (n: number) => `Paiements à vérifier (${n})`,
+    noPayments: "Aucun paiement en attente.",
+    accounts: (n: number) => `Comptes pro (${n})`,
+    filterLabel: "Filtrer les abonnements",
+    noAccounts: "Aucun compte dans cette liste.",
+    lastReviewed: "Derniers paiements traités",
+    deletedAccount: "Compte supprimé",
+    noProof: "Preuve indisponible",
+    proofAlt: "Preuve du paiement (ouvrir en grand)",
+    unknownAccount: "Compte inconnu",
+    offer: (title: string | undefined) => `Offre « ${title ?? "supprimée"} »`,
+    offerUntil: (date: string) => `, jusqu'au ${date}`,
+    payer: "Numéro payeur",
+    reference: "Référence",
+    declared: "Déclaré le",
+    subscription: "Abonnement",
+    checkStatement: (method: string, amount: string) =>
+      `Vérifiez sur le relevé ${method} que ${amount} ont bien été reçus de ce numéro avec cette référence avant de confirmer.`,
+    offerQueue: " Une fois confirmé, l'offre arrive dans la file de validation des offres.",
+    canceledPayment: "Abonnement annulé : le superadmin doit le réactiver avant que ce paiement puisse être confirmé.",
+    rejectReason: "Motif du refus (visible par le pro)",
+    confirm: "Confirmer le paiement",
+    reject: "Refuser",
+    canceledReason: (r: string | null) => `Annulé : ${r ?? "sans motif"}`,
+    endedOn: (date: string) => `Accès terminé le ${date}`,
+    accessUntil: (date: string, days: number) =>
+      `Accès jusqu'au ${date} (${days <= 1 ? "dernier jour" : `${days} jours`})`,
+    trialUntil: (date: string) => `Essai jusqu'au ${date}`,
+    paidUntil: (date: string) => ` · payé jusqu'au ${date}`,
+    remind: "Relancer",
+    manage: "Gérer l'abonnement",
+    reactivate: "Réactiver l'abonnement",
+    give: "Offrir",
+    days: "jours",
+    add: "Ajouter",
+    cancelReason: "Motif de l'annulation (visible par le pro)",
+    cancel: "Annuler l'abonnement",
+  },
+  en: {
+    filters: {
+      tous: "All",
+      bientot: "Expiring within 7 days",
+      trial: "On trial",
+      active: "Subscribed",
+      expired: "Expired",
+      canceled: "Cancelled",
+    } as Record<FilterKey, string>,
+    pricing: (month: string, day: string, trial: number) =>
+      `${month} / month · ${day} / day per deal · ${trial}-day trial`,
+    settings: "Pricing and numbers",
+    keyFigures: "Key figures",
+    revenueOf: (month: string) => `Revenue for ${month}`,
+    previous: (month: string, amount: string) => `${month}: ${amount}`,
+    subscribers: "Subscribers",
+    inTrial: (n: number) => `${n} on trial`,
+    toCheck: "Payments to check",
+    expiringSoon: "Expiring within 7 days",
+    expired: "Expired",
+    expiredDetail: "no active subscription",
+    canceled: "Cancelled",
+    paymentsToCheck: (n: number) => `Payments to check (${n})`,
+    noPayments: "No pending payments.",
+    accounts: (n: number) => `Business accounts (${n})`,
+    filterLabel: "Filter subscriptions",
+    noAccounts: "No accounts in this list.",
+    lastReviewed: "Latest processed payments",
+    deletedAccount: "Deleted account",
+    noProof: "Proof unavailable",
+    proofAlt: "Proof of payment (open full size)",
+    unknownAccount: "Unknown account",
+    offer: (title: string | undefined) => `Deal "${title ?? "deleted"}"`,
+    offerUntil: (date: string) => `, until ${date}`,
+    payer: "Paying number",
+    reference: "Reference",
+    declared: "Declared on",
+    subscription: "Subscription",
+    checkStatement: (method: string, amount: string) =>
+      `Check on the ${method} statement that ${amount} was received from this number with this reference before confirming.`,
+    offerQueue: " Once confirmed, the deal goes into the deal review queue.",
+    canceledPayment: "Subscription cancelled: the super administrator must reactivate it before this payment can be confirmed.",
+    rejectReason: "Reason for rejection (shown to the business)",
+    confirm: "Confirm payment",
+    reject: "Reject",
+    canceledReason: (r: string | null) => `Cancelled: ${r ?? "no reason given"}`,
+    endedOn: (date: string) => `Access ended on ${date}`,
+    accessUntil: (date: string, days: number) => `Access until ${date} (${days <= 1 ? "last day" : `${days} days`})`,
+    trialUntil: (date: string) => `Trial until ${date}`,
+    paidUntil: (date: string) => ` · paid until ${date}`,
+    remind: "Send reminder",
+    manage: "Manage subscription",
+    reactivate: "Reactivate subscription",
+    give: "Give",
+    days: "days",
+    add: "Add",
+    cancelReason: "Reason for cancellation (shown to the business)",
+    cancel: "Cancel subscription",
+  },
+});
+
+type Text = (typeof T)["fr"];
 
 const STATUS_TONE: Record<SubscriptionStatus, string> = {
   trial: "bg-sea/10 text-sea-dark",
@@ -63,12 +189,13 @@ const STATUS_TONE: Record<SubscriptionStatus, string> = {
   canceled: "bg-red-100 text-red-700",
 };
 
-export default function AbonnementsPage({ searchParams }: PageProps<"/admin/abonnements">) {
+export default async function AbonnementsPage({ searchParams }: PageProps<"/[lang]/admin/abonnements">) {
+  const { heading } = TITLES[await getLocale()];
   return (
     <>
       <header className="flex items-center gap-2 px-2 py-3">
         <BackButton fallback="/admin" />
-        <h1 className="text-xl font-extrabold md:text-2xl">Abonnements</h1>
+        <h1 className="text-xl font-extrabold md:text-2xl">{heading}</h1>
       </header>
       <Suspense fallback={<div className="m-5 h-96 animate-pulse rounded-2xl bg-surface" aria-hidden />}>
         <Dashboard searchParams={searchParams} />
@@ -80,9 +207,9 @@ export default function AbonnementsPage({ searchParams }: PageProps<"/admin/abon
 const isExpiringSoon = (s: Subscription) => (s.status === "trial" || s.status === "active") && s.daysLeft <= 7;
 
 /** Les 6 derniers mois (mois en cours compris), à l'heure de Mahajanga : "2026-05" … "2026-10". */
-function lastMonths(count: number) {
+function lastMonths(count: number, locale: Locale) {
   const [year, month] = todayIso().split("-").map(Number);
-  const label = new Intl.DateTimeFormat("fr-FR", { month: "short", timeZone: "UTC" });
+  const label = new Intl.DateTimeFormat(INTL_LOCALE[locale], { month: "short", timeZone: "UTC" });
   return Array.from({ length: count }, (_, i) => {
     const d = new Date(Date.UTC(year, month - 1 - (count - 1 - i), 15));
     return { key: d.toISOString().slice(0, 7), label: label.format(d) };
@@ -101,12 +228,15 @@ async function loadPayments(supabase: SupabaseClient, since: string) {
   return data;
 }
 
-async function Dashboard({ searchParams }: { searchParams: PageProps<"/admin/abonnements">["searchParams"] }) {
+async function Dashboard({ searchParams }: { searchParams: PageProps<"/[lang]/admin/abonnements">["searchParams"] }) {
   if (!isSupabaseConfigured()) return <Unavailable />;
   const { user, supabase } = await requireAdmin();
   const superadmin = user.role === "superadmin";
+  const locale = await getLocale();
+  const t = T[locale];
+  const money = (amount: number) => formatAriary(amount, locale);
 
-  const months = lastMonths(6);
+  const months = lastMonths(6, locale);
   // 1er jour du plus ancien mois, minuit à Mahajanga, en UTC sans millisecondes (valeur sûre dans un filtre `or`).
   const since = `${new Date(`${months[0].key}-01T00:00:00+03:00`).toISOString().slice(0, 19)}Z`;
   const [{ data: list, error }, payments, settings, params] = await Promise.all([
@@ -144,7 +274,7 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/admin/abo
   const lastMonth = revenue[revenue.length - 2];
 
   const raw = typeof params.statut === "string" ? params.statut : "tous";
-  const filter: FilterKey = FILTERS.some((f) => f.key === raw) ? (raw as FilterKey) : "tous";
+  const filter: FilterKey = FILTERS.some((f) => f === raw) ? (raw as FilterKey) : "tous";
   const shown = pros
     .filter((p) => (filter === "tous" ? true : filter === "bientot" ? isExpiringSoon(p.sub) : p.sub.status === filter))
     .sort((a, b) => a.sub.accessUntil.localeCompare(b.sub.accessUntil));
@@ -154,35 +284,34 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/admin/abo
       <div className="flex flex-wrap items-center gap-2">
         {settings && (
           <p className="text-sm text-muted">
-            {formatAriary(settings.monthlyPrice)} / mois · {formatAriary(settings.dayPrice)} / jour et par offre · essai
-            de {settings.trialDays} jours
+            {t.pricing(money(settings.monthlyPrice), money(settings.dayPrice), settings.trialDays)}
           </p>
         )}
         {superadmin && (
           <Link href="/admin/abonnements/tarifs" className={`${secondaryButtonClass} ml-auto`}>
             <Settings className="size-4" aria-hidden />
-            Tarifs et numéros
+            {t.settings}
           </Link>
         )}
       </div>
 
-      <section aria-label="Chiffres clés" className="grid grid-cols-2 gap-3 md:grid-cols-3">
+      <section aria-label={t.keyFigures} className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <Stat
-          label={`Revenus de ${thisMonth.label}`}
-          value={formatAriary(thisMonth.amount)}
-          detail={`${lastMonth.label} : ${formatAriary(lastMonth.amount)}`}
+          label={t.revenueOf(thisMonth.label)}
+          value={money(thisMonth.amount)}
+          detail={t.previous(lastMonth.label, money(lastMonth.amount))}
           hero
         />
-        <Stat label="Abonnés" value={String(count("active"))} detail={`${count("trial")} en essai`} />
-        <Stat label="Paiements à vérifier" value={String(pending.length)} accent={pending.length > 0} />
-        <Stat label="Expirent sous 7 jours" value={String(pros.filter((p) => isExpiringSoon(p.sub)).length)} />
-        <Stat label="Expirés" value={String(count("expired"))} detail="ne peuvent plus publier" />
-        <Stat label="Annulés" value={String(count("canceled"))} />
+        <Stat label={t.subscribers} value={String(count("active"))} detail={t.inTrial(count("trial"))} />
+        <Stat label={t.toCheck} value={String(pending.length)} accent={pending.length > 0} />
+        <Stat label={t.expiringSoon} value={String(pros.filter((p) => isExpiringSoon(p.sub)).length)} />
+        <Stat label={t.expired} value={String(count("expired"))} detail={t.expiredDetail} />
+        <Stat label={t.canceled} value={String(count("canceled"))} />
       </section>
 
-      <RevenueChart months={revenue} />
+      <RevenueChart months={revenue} locale={locale} />
 
-      <Section title={`Paiements à vérifier (${pending.length})`} empty="Aucun paiement en attente.">
+      <Section title={t.paymentsToCheck(pending.length)} empty={t.noPayments}>
         {pending.map((p) => (
           <PaymentCard
             key={p.id}
@@ -190,33 +319,35 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/admin/abo
             pro={byUser.get(p.user_id)}
             proofUrl={proofs.get(p.proof_path)}
             offerTitle={p.offer_id ? offerTitles.get(p.offer_id) : undefined}
+            t={t}
+            locale={locale}
           />
         ))}
       </Section>
 
       <section>
-        <h2 className="text-lg font-extrabold">Comptes pro ({pros.length})</h2>
-        <nav aria-label="Filtrer les abonnements" className="no-scrollbar -mx-5 mt-3 flex gap-2 overflow-x-auto px-5">
+        <h2 className="text-lg font-extrabold">{t.accounts(pros.length)}</h2>
+        <nav aria-label={t.filterLabel} className="no-scrollbar -mx-5 mt-3 flex gap-2 overflow-x-auto px-5">
           {FILTERS.map((f) => (
             <Link
-              key={f.key}
-              href={f.key === "tous" ? "/admin/abonnements" : `/admin/abonnements?statut=${f.key}`}
-              aria-current={filter === f.key ? "page" : undefined}
+              key={f}
+              href={f === "tous" ? "/admin/abonnements" : `/admin/abonnements?statut=${f}`}
+              aria-current={filter === f ? "page" : undefined}
               className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold ${
-                filter === f.key ? "bg-ink text-white" : "border border-line bg-white text-ink"
+                filter === f ? "bg-ink text-white" : "border border-line bg-white text-ink"
               }`}
             >
-              {f.label}
+              {t.filters[f]}
             </Link>
           ))}
         </nav>
         {shown.length === 0 ? (
-          <p className="mt-3 rounded-2xl bg-surface p-5 text-center text-sm text-muted">Aucun compte dans cette liste.</p>
+          <p className="mt-3 rounded-2xl bg-surface p-5 text-center text-sm text-muted">{t.noAccounts}</p>
         ) : (
           <ul className="mt-3 space-y-3">
             {shown.map((p) => (
               <li key={p.user_id}>
-                <ProCard pro={p} superadmin={superadmin} />
+                <ProCard pro={p} superadmin={superadmin} t={t} locale={locale} />
               </li>
             ))}
           </ul>
@@ -225,19 +356,19 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/admin/abo
 
       {reviewed.length > 0 && (
         <section>
-          <h2 className="text-lg font-extrabold">Derniers paiements traités</h2>
+          <h2 className="text-lg font-extrabold">{t.lastReviewed}</h2>
           <ul className="mt-3 divide-y divide-line rounded-2xl border border-line bg-white text-sm">
             {reviewed.map((p) => (
               <li key={p.id} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-4 py-2.5">
-                <span className="min-w-0 font-semibold">{byUser.get(p.user_id)?.company ?? "Compte supprimé"}</span>
+                <span className="min-w-0 font-semibold">{byUser.get(p.user_id)?.company ?? t.deletedAccount}</span>
                 <span className="text-muted">
-                  {formatAriary(p.amount)} · {paymentLabel(p)} · {paymentMethodLabel(p.method)}
-                  {p.reviewed_at && ` · ${formatShortDate(dateOf(p.reviewed_at))}`}
+                  {money(p.amount)} · {paymentLabel(p, locale)} · {paymentMethodLabel(p.method)}
+                  {p.reviewed_at && ` · ${formatShortDate(dateOf(p.reviewed_at), locale)}`}
                 </span>
                 <span
                   className={`text-xs font-semibold ${p.status === "confirmed" ? "text-verified" : "text-red-700"}`}
                 >
-                  {PAYMENT_STATUS_LABEL[p.status]}
+                  {PAYMENT_STATUS_LABEL[locale][p.status]}
                   {p.status === "rejected" && p.rejection_reason && ` : ${p.rejection_reason}`}
                 </span>
               </li>
@@ -295,12 +426,16 @@ function PaymentCard({
   pro,
   proofUrl,
   offerTitle,
+  t,
+  locale,
 }: {
   payment: PaymentRow;
   pro?: Pro;
   proofUrl?: string;
   /** Paiement de visibilité : titre de l'offre concernée. */
   offerTitle?: string;
+  t: Text;
+  locale: Locale;
 }) {
   const canceled = pro?.sub.status === "canceled";
 
@@ -316,24 +451,24 @@ function PaymentCard({
           >
             {/* Lien signé et temporaire vers un fichier privé : il ne passe pas par l'optimiseur d'images. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={proofUrl} alt="Preuve du paiement (ouvrir en grand)" className="size-full object-cover" />
+            <img src={proofUrl} alt={t.proofAlt} className="size-full object-cover" />
           </a>
         ) : (
           <div className="grid size-24 shrink-0 place-items-center rounded-xl bg-surface text-center text-xs text-muted">
-            Preuve indisponible
+            {t.noProof}
           </div>
         )}
         <div className="min-w-0 flex-1 space-y-0.5">
-          <h3 className="truncate font-bold">{pro?.company ?? "Compte inconnu"}</h3>
+          <h3 className="truncate font-bold">{pro?.company ?? t.unknownAccount}</h3>
           <p className="truncate text-sm text-muted">{pro?.email}</p>
-          <p className="text-lg font-extrabold text-brand">{formatAriary(p.amount)}</p>
+          <p className="text-lg font-extrabold text-brand">{formatAriary(p.amount, locale)}</p>
           <p className="text-sm">
-            {paymentLabel(p)} · {paymentMethodLabel(p.method)}
+            {paymentLabel(p, locale)} · {paymentMethodLabel(p.method)}
           </p>
           {p.kind === "offer" && (
             <p className="text-sm text-muted">
-              Offre « {offerTitle ?? "supprimée"} »
-              {p.covers_until && `, jusqu'au ${formatShortDate(p.covers_until)}`}
+              {t.offer(offerTitle)}
+              {p.covers_until && t.offerUntil(formatShortDate(p.covers_until, locale))}
             </p>
           )}
         </div>
@@ -341,49 +476,48 @@ function PaymentCard({
 
       <dl className="grid grid-cols-2 gap-2 rounded-xl bg-surface p-3 text-sm">
         <div>
-          <dt className="text-xs text-muted">Numéro payeur</dt>
+          <dt className="text-xs text-muted">{t.payer}</dt>
           <dd className="font-semibold break-all">{p.payer_phone}</dd>
         </div>
         <div>
-          <dt className="text-xs text-muted">Référence</dt>
+          <dt className="text-xs text-muted">{t.reference}</dt>
           <dd className="font-semibold break-all">{p.reference}</dd>
         </div>
         <div>
-          <dt className="text-xs text-muted">Déclaré le</dt>
-          <dd className="font-semibold">{formatShortDate(dateOf(p.created_at))}</dd>
+          <dt className="text-xs text-muted">{t.declared}</dt>
+          <dd className="font-semibold">{formatShortDate(dateOf(p.created_at), locale)}</dd>
         </div>
         <div>
-          <dt className="text-xs text-muted">Abonnement</dt>
-          <dd className="font-semibold">{pro ? SUBSCRIPTION_STATUS_LABEL[pro.sub.status] : "?"}</dd>
+          <dt className="text-xs text-muted">{t.subscription}</dt>
+          <dd className="font-semibold">{pro ? SUBSCRIPTION_STATUS_LABEL[locale][pro.sub.status] : "?"}</dd>
         </div>
       </dl>
 
       <p className="text-xs text-muted">
-        Vérifiez sur le relevé {paymentMethodLabel(p.method)} que {formatAriary(p.amount)} ont bien été reçus de ce
-        numéro avec cette référence avant de confirmer.
-        {p.kind === "offer" && " Une fois confirmé, l'offre arrive dans la file de validation des offres."}
+        {t.checkStatement(paymentMethodLabel(p.method), formatAriary(p.amount, locale))}
+        {p.kind === "offer" && t.offerQueue}
       </p>
 
       {canceled && (
         <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
-          Abonnement annulé : le superadmin doit le réactiver avant que ce paiement puisse être confirmé.
+          {t.canceledPayment}
         </p>
       )}
 
       <form className="space-y-2 border-t border-line pt-3">
         <input type="hidden" name="id" value={p.id} />
-        <input name="reason" maxLength={300} placeholder="Motif du refus (visible par le pro)" className={inputClass} />
+        <input name="reason" maxLength={300} placeholder={t.rejectReason} className={inputClass} />
         <div className="flex flex-wrap gap-2">
           {!canceled && (
             <SubmitButton
               formAction={confirmPayment}
               className="flex items-center justify-center gap-2 rounded-full bg-verified px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
             >
-              Confirmer le paiement
+              {t.confirm}
             </SubmitButton>
           )}
           <SubmitButton formAction={rejectPayment} className={`${secondaryButtonClass} text-red-700`}>
-            Refuser
+            {t.reject}
           </SubmitButton>
         </div>
       </form>
@@ -391,14 +525,16 @@ function PaymentCard({
   );
 }
 
-function ProCard({ pro: p, superadmin }: { pro: Pro; superadmin: boolean }) {
+function ProCard({ pro: p, superadmin, t, locale }: { pro: Pro; superadmin: boolean; t: Text; locale: Locale }) {
   const { sub } = p;
-  const until = formatShortDate(dateOf(sub.accessUntil));
+  const until = formatShortDate(dateOf(sub.accessUntil), locale);
   const soon = isExpiringSoon(sub);
+  // Message envoyé au pro : en français, la langue de travail avec les professionnels de Mahajanga.
+  const untilFr = formatShortDate(dateOf(sub.accessUntil));
   const reminder =
     sub.status === "expired"
-      ? `Bonjour, c'est Janga Explorer. Votre abonnement est arrivé à échéance le ${until}. Pour publier à nouveau vos offres, renouvelez-le depuis votre espace pro (Mon abonnement).`
-      : `Bonjour, c'est Janga Explorer. Votre ${sub.status === "trial" ? "essai gratuit" : "abonnement"} se termine le ${until}. Pour continuer à publier vos offres, abonnez-vous depuis votre espace pro (Mon abonnement).`;
+      ? `Bonjour, c'est Janga Explorer. Votre abonnement est arrivé à échéance le ${untilFr}. Pour publier à nouveau vos offres, renouvelez-le depuis votre espace pro (Mon abonnement), ou payez la visibilité d'une offre à la journée.`
+      : `Bonjour, c'est Janga Explorer. Votre ${sub.status === "trial" ? "essai gratuit" : "abonnement"} se termine le ${untilFr}. Pour continuer à publier vos offres, abonnez-vous depuis votre espace pro (Mon abonnement).`;
 
   return (
     <article className="space-y-3 rounded-2xl border border-line bg-white p-4 shadow-sm">
@@ -411,20 +547,20 @@ function ProCard({ pro: p, superadmin }: { pro: Pro; superadmin: boolean }) {
           </p>
         </div>
         <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_TONE[sub.status]}`}>
-          {SUBSCRIPTION_STATUS_LABEL[sub.status]}
+          {SUBSCRIPTION_STATUS_LABEL[locale][sub.status]}
         </span>
       </div>
 
       <p className={`text-sm ${soon ? "font-semibold text-amber-700" : "text-ink/80"}`}>
         {sub.status === "canceled"
-          ? `Annulé : ${sub.cancelReason ?? "sans motif"}`
+          ? t.canceledReason(sub.cancelReason)
           : sub.status === "expired"
-            ? `Accès terminé le ${until}`
-            : `Accès jusqu'au ${until} (${sub.daysLeft <= 1 ? "dernier jour" : `${sub.daysLeft} jours`})`}
+            ? t.endedOn(until)
+            : t.accessUntil(until, sub.daysLeft)}
       </p>
       <p className="text-xs text-muted">
-        Essai jusqu&apos;au {formatShortDate(dateOf(sub.trialEndsAt))}
-        {sub.paidUntil && ` · payé jusqu'au ${formatShortDate(dateOf(sub.paidUntil))}`}
+        {t.trialUntil(formatShortDate(dateOf(sub.trialEndsAt), locale))}
+        {sub.paidUntil && t.paidUntil(formatShortDate(dateOf(sub.paidUntil), locale))}
       </p>
 
       {(p.whatsapp || p.phone) && (soon || sub.status === "expired") && (
@@ -437,7 +573,7 @@ function ProCard({ pro: p, superadmin }: { pro: Pro; superadmin: boolean }) {
               className={secondaryButtonClass}
             >
               <MessageCircle className="size-4 text-verified" aria-hidden />
-              Relancer
+              {t.remind}
             </a>
           )}
           {p.phone && (
@@ -451,13 +587,13 @@ function ProCard({ pro: p, superadmin }: { pro: Pro; superadmin: boolean }) {
 
       {superadmin && (
         <details className="group border-t border-line pt-3">
-          <summary className="cursor-pointer text-sm font-semibold text-brand">Gérer l&apos;abonnement</summary>
+          <summary className="cursor-pointer text-sm font-semibold text-brand">{t.manage}</summary>
           <div className="mt-3 space-y-3">
             {sub.status === "canceled" ? (
               <form>
                 <input type="hidden" name="id" value={p.user_id} />
                 <SubmitButton formAction={reactivateSubscription} className={secondaryButtonClass}>
-                  Réactiver l&apos;abonnement
+                  {t.reactivate}
                 </SubmitButton>
               </form>
             ) : (
@@ -465,7 +601,7 @@ function ProCard({ pro: p, superadmin }: { pro: Pro; superadmin: boolean }) {
                 <form className="flex flex-wrap items-center gap-2">
                   <input type="hidden" name="id" value={p.user_id} />
                   <label className="flex items-center gap-2 text-sm">
-                    Offrir
+                    {t.give}
                     <input
                       name="days"
                       type="number"
@@ -476,10 +612,10 @@ function ProCard({ pro: p, superadmin }: { pro: Pro; superadmin: boolean }) {
                       defaultValue={30}
                       className={`${inputClass} w-20`}
                     />
-                    jours
+                    {t.days}
                   </label>
                   <SubmitButton formAction={grantDays} className={secondaryButtonClass}>
-                    Ajouter
+                    {t.add}
                   </SubmitButton>
                 </form>
                 <form className="space-y-2">
@@ -487,11 +623,11 @@ function ProCard({ pro: p, superadmin }: { pro: Pro; superadmin: boolean }) {
                   <input
                     name="reason"
                     maxLength={300}
-                    placeholder="Motif de l'annulation (visible par le pro)"
+                    placeholder={t.cancelReason}
                     className={inputClass}
                   />
                   <SubmitButton formAction={cancelSubscription} className={`${secondaryButtonClass} text-red-700`}>
-                    Annuler l&apos;abonnement
+                    {t.cancel}
                   </SubmitButton>
                 </form>
               </>

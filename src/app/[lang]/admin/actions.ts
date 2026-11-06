@@ -4,12 +4,27 @@ import { refresh, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { todayIso } from "@/lib/format";
+import { messages } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/locale";
 import { removeOfferImage, uploadOfferImage } from "@/lib/offer-image";
-import { makeSlug, parseBusiness, parseOffer } from "@/lib/pro-forms";
+import { echoTickets, makeSlug, parseBusiness, parseOffer } from "@/lib/pro-forms";
 import type { FormState } from "../espace-pro/actions";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const GENERIC_ERROR = "Enregistrement impossible. Réessayez dans un instant.";
+const T = messages({
+  fr: {
+    generic: "Enregistrement impossible. Réessayez dans un instant.",
+    gone: "Cette offre n'existe plus.",
+    business: "Choisissez un établissement.",
+    photo: "Ajoutez une photo de l'offre.",
+  },
+  en: {
+    generic: "Couldn't save. Please try again in a moment.",
+    gone: "This deal no longer exists.",
+    business: "Choose a business.",
+    photo: "Add a photo of the deal.",
+  },
+});
 
 type ExistingOffer = { id: string; status: string; is_verified: boolean; verified_at: string | null };
 
@@ -74,11 +89,15 @@ export async function adminSaveOffer(_prev: FormState, formData: FormData): Prom
   const values = Object.fromEntries(
     [
       "title", "category", "description", "priceOriginal", "priceOffer", "conditions", "location", "mapUrl", "validUntil",
+      "pricing", "presaleUntil",
       "businessId", "name", "kind", "whatsapp", "phone", "online", "verified", "featured",
     ].map((n) => [n, field(n)]),
   );
+  values.tickets = echoTickets(formData);
 
-  const parsed = parseOffer(formData);
+  const locale = await getRequestLocale();
+  const t = T[locale];
+  const parsed = parseOffer(formData, locale);
   if (!parsed.ok) return { error: parsed.error, values };
   const o = parsed.value;
 
@@ -91,7 +110,7 @@ export async function adminSaveOffer(_prev: FormState, formData: FormData): Prom
       .select("id, status, is_verified, verified_at, image_url")
       .eq("id", UUID.test(id) ? id : "")
       .maybeSingle<ExistingOffer & { image_url: string }>();
-    if (!data) return { error: "Cette offre n'existe plus.", values };
+    if (!data) return { error: t.gone, values };
     existing = data;
     existingImage = data.image_url;
   }
@@ -106,18 +125,18 @@ export async function adminSaveOffer(_prev: FormState, formData: FormData): Prom
     return { error, values };
   };
   if (chosen === "new") {
-    const business = parseBusiness(formData);
+    const business = parseBusiness(formData, locale);
     if (!business.ok) return { error: business.error, values };
     const { data, error } = await supabase
       .from("businesses")
       .insert({ ...business.value, owner_id: null })
       .select("id")
       .single<{ id: string }>();
-    if (error || !data) return { error: GENERIC_ERROR, values };
+    if (error || !data) return { error: t.generic, values };
     businessId = data.id;
     createdBusinessId = data.id;
   } else if (!UUID.test(chosen)) {
-    return { error: "Choisissez un établissement.", values };
+    return { error: t.business, values };
   }
 
   // Photo : obligatoire à la création, facultative ensuite.
@@ -125,12 +144,12 @@ export async function adminSaveOffer(_prev: FormState, formData: FormData): Prom
   let uploadedPath: string | null = null;
   let imageUrl = existingImage;
   if (file instanceof File && file.size > 0) {
-    const upload = await uploadOfferImage(supabase, user.id, file);
+    const upload = await uploadOfferImage(supabase, user.id, file, locale);
     if (!upload.ok) return fail(upload.error);
     uploadedPath = upload.path;
     imageUrl = upload.url;
   }
-  if (!imageUrl) return fail("Ajoutez une photo de l'offre.");
+  if (!imageUrl) return fail(t.photo);
 
   const online = field("online") === "on";
   const verified = online && field("verified") === "on";
@@ -142,6 +161,8 @@ export async function adminSaveOffer(_prev: FormState, formData: FormData): Prom
     image_url: imageUrl,
     price_original: o.priceOriginal,
     price_offer: o.priceOffer,
+    ticket_tiers: o.tickets,
+    presale_until: o.presaleUntil,
     conditions: o.conditions,
     location: o.location,
     map_url: o.mapUrl,
@@ -160,7 +181,7 @@ export async function adminSaveOffer(_prev: FormState, formData: FormData): Prom
 
   if (error) {
     if (uploadedPath) await removeOfferImage(supabase, uploadedPath);
-    return fail(GENERIC_ERROR);
+    return fail(t.generic);
   }
 
   updateTag("offers");

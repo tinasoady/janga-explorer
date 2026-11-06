@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SessionUser } from "./auth";
 import { addDaysIso, daysBetween } from "./format";
+import type { Locale } from "./i18n";
 import { checkImage } from "./pro-forms";
 
 // Abonnement des comptes pro : essai gratuit à l'approbation, puis paiements Mobile Money confirmés par un admin.
@@ -9,11 +10,9 @@ import { checkImage } from "./pro-forms";
 
 export type SubscriptionStatus = "trial" | "active" | "expired" | "canceled";
 
-export const SUBSCRIPTION_STATUS_LABEL: Record<SubscriptionStatus, string> = {
-  trial: "Essai gratuit",
-  active: "Abonné",
-  expired: "Expiré",
-  canceled: "Annulé",
+export const SUBSCRIPTION_STATUS_LABEL: Record<Locale, Record<SubscriptionStatus, string>> = {
+  fr: { trial: "Essai gratuit", active: "Abonné", expired: "Expiré", canceled: "Annulé" },
+  en: { trial: "Free trial", active: "Subscribed", expired: "Expired", canceled: "Cancelled" },
 };
 
 export type PaymentMethod = "mvola" | "orange_money" | "airtel_money";
@@ -40,10 +39,9 @@ export const MAX_PASS_DAYS = 90;
 
 export type PaymentStatus = "pending" | "confirmed" | "rejected";
 
-export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
-  pending: "En cours de vérification",
-  confirmed: "Confirmé",
-  rejected: "Refusé",
+export const PAYMENT_STATUS_LABEL: Record<Locale, Record<PaymentStatus, string>> = {
+  fr: { pending: "En cours de vérification", confirmed: "Confirmé", rejected: "Refusé" },
+  en: { pending: "Being checked", confirmed: "Confirmed", rejected: "Rejected" },
 };
 
 export type SubscriptionRow = {
@@ -182,8 +180,12 @@ export type PaymentRow = {
 };
 
 /** "3 mois" pour un abonnement, "5 jours de visibilité" pour une offre. */
-export function paymentLabel(p: Pick<PaymentRow, "kind" | "months" | "days">) {
-  if (p.kind === "offer") return `${p.days} jour${p.days === 1 ? "" : "s"} de visibilité`;
+export function paymentLabel(p: Pick<PaymentRow, "kind" | "months" | "days">, locale: Locale = "fr") {
+  const plural = (n: number | null) => (n === 1 ? "" : "s");
+  if (locale === "en") {
+    return p.kind === "offer" ? `${p.days} day${plural(p.days)} of visibility` : `${p.months} month${plural(p.months)}`;
+  }
+  if (p.kind === "offer") return `${p.days} jour${plural(p.days)} de visibilité`;
   return `${p.months} mois`;
 }
 
@@ -206,13 +208,19 @@ export async function uploadPaymentProof(
   supabase: SupabaseClient,
   userId: string,
   file: File,
+  locale: Locale = "fr",
 ): Promise<{ ok: true; path: string } | { ok: false; error: string }> {
-  const image = await checkImage(file);
+  const image = await checkImage(file, locale);
   if (!image.ok) return image;
 
   const path = `${userId}/${crypto.randomUUID()}.${image.ext}`;
   const { error } = await supabase.storage.from(PROOF_BUCKET).upload(path, file, { contentType: file.type });
-  if (error) return { ok: false, error: "L'envoi de la preuve a échoué. Réessayez dans un instant." };
+  if (error) {
+    return {
+      ok: false,
+      error: locale === "en" ? "The proof upload failed. Please try again in a moment." : "L'envoi de la preuve a échoué. Réessayez dans un instant.",
+    };
+  }
   return { ok: true, path };
 }
 

@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { requireProAccess } from "@/lib/auth";
+import { messages } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/locale";
 import { getToday } from "@/lib/offers";
 import { getMyBusiness, getMyOffer } from "@/lib/pro";
 import {
@@ -14,7 +16,38 @@ import {
 } from "@/lib/subscription";
 import type { FormState } from "../actions";
 
-const GENERIC_ERROR = "Enregistrement impossible. Réessayez dans un instant.";
+const T = messages({
+  fr: {
+    generic: "Enregistrement impossible. Réessayez dans un instant.",
+    gone: "Cette offre n'existe plus.",
+    paid: "Les jours de visibilité de cette offre sont déjà payés.",
+    method: "Choisissez le moyen de paiement utilisé.",
+    duration: "Choisissez la durée payée.",
+    payer: "Indiquez le numéro qui a envoyé le paiement (ex : 034 12 345 67).",
+    reference: "Indiquez la référence de la transaction reçue par SMS.",
+    proof: "Ajoutez la capture d'écran du SMS de confirmation du paiement.",
+    noSub: "Votre compte n'a pas d'abonnement. Contactez Janga Explorer.",
+    canceled: "Votre abonnement a été annulé : contactez Janga Explorer avant de payer.",
+    pending: "Un paiement est déjà en cours de vérification. Attendez sa confirmation.",
+    duplicate: "Cette référence de transaction a déjà été déclarée.",
+    tooLong: (max: number) => `Choisissez une date de fin à ${max} jours au plus, ou abonnez-vous.`,
+  },
+  en: {
+    generic: "Couldn't save. Please try again in a moment.",
+    gone: "This deal no longer exists.",
+    paid: "The visibility days for this deal are already paid.",
+    method: "Choose the payment method you used.",
+    duration: "Choose the duration you paid for.",
+    payer: "Enter the number that sent the payment (e.g. 034 12 345 67).",
+    reference: "Enter the transaction reference you received by SMS.",
+    proof: "Add the screenshot of the payment confirmation SMS.",
+    noSub: "Your account has no subscription. Contact Janga Explorer.",
+    canceled: "Your subscription has been cancelled: contact Janga Explorer before paying.",
+    pending: "A payment is already being checked. Please wait for it to be confirmed.",
+    duplicate: "This transaction reference has already been declared.",
+    tooLong: (max: number) => `Choose an end date ${max} days away at most, or subscribe.`,
+  },
+});
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
@@ -24,6 +57,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  */
 export async function declarePayment(_prev: FormState, formData: FormData): Promise<FormState> {
   const { user, supabase } = await requireProAccess("/espace-pro/abonnement");
+  const locale = await getRequestLocale();
+  const t = T[locale];
   const field = (n: string) => String(formData.get(n) ?? "").trim();
   const values = { method: field("method"), months: field("months"), payerPhone: field("payerPhone"), reference: field("reference") };
 
@@ -37,33 +72,33 @@ export async function declarePayment(_prev: FormState, formData: FormData): Prom
   if (offerId) {
     const business = await getMyBusiness(supabase, user.id);
     const offer = business && UUID.test(offerId) ? await getMyOffer(supabase, business.id, offerId) : null;
-    if (!offer) return { error: "Cette offre n'existe plus.", values };
+    if (!offer) return { error: t.gone, values };
     days = passDaysDue(offer, await getToday());
-    if (days === 0) return { error: "Les jours de visibilité de cette offre sont déjà payés.", values };
+    if (days === 0) return { error: t.paid, values };
     if (days > MAX_PASS_DAYS) {
-      return { error: `Choisissez une date de fin à ${MAX_PASS_DAYS} jours au plus, ou abonnez-vous.`, values };
+      return { error: t.tooLong(MAX_PASS_DAYS), values };
     }
   }
 
-  if (!isPaymentMethod(method)) return { error: "Choisissez le moyen de paiement utilisé.", values };
-  if (!offerId && !MONTH_CHOICES.some((m) => m === months)) return { error: "Choisissez la durée payée.", values };
+  if (!isPaymentMethod(method)) return { error: t.method, values };
+  if (!offerId && !MONTH_CHOICES.some((m) => m === months)) return { error: t.duration, values };
   if (!/^\+?[0-9]{8,15}$/.test(payerPhone)) {
-    return { error: "Indiquez le numéro qui a envoyé le paiement (ex : 034 12 345 67).", values };
+    return { error: t.payer, values };
   }
   if (reference.length < 3 || reference.length > 60) {
-    return { error: "Indiquez la référence de la transaction reçue par SMS.", values };
+    return { error: t.reference, values };
   }
 
   const file = formData.get("proof");
   if (!(file instanceof File) || file.size === 0) {
-    return { error: "Ajoutez la capture d'écran du SMS de confirmation du paiement.", values };
+    return { error: t.proof, values };
   }
 
   // Vérifié avant l'envoi de la preuve pour ne pas stocker de fichier inutile (la base contrôle aussi).
   const subscription = await getMySubscription(supabase, user.id);
-  if (!subscription) return { error: "Votre compte n'a pas d'abonnement. Contactez Janga Explorer.", values };
+  if (!subscription) return { error: t.noSub, values };
   if (subscription.status === "canceled") {
-    return { error: "Votre abonnement a été annulé : contactez Janga Explorer avant de payer.", values };
+    return { error: t.canceled, values };
   }
   const pendingQuery = supabase
     .from("subscription_payments")
@@ -71,9 +106,9 @@ export async function declarePayment(_prev: FormState, formData: FormData): Prom
     .eq("user_id", user.id)
     .eq("status", "pending");
   const { count } = await (offerId ? pendingQuery.eq("offer_id", offerId) : pendingQuery.eq("kind", "subscription"));
-  if (count) return { error: "Un paiement est déjà en cours de vérification. Attendez sa confirmation.", values };
+  if (count) return { error: t.pending, values };
 
-  const upload = await uploadPaymentProof(supabase, user.id, file);
+  const upload = await uploadPaymentProof(supabase, user.id, file, locale);
   if (!upload.ok) return { error: upload.error, values };
 
   const { error } = await supabase.from("subscription_payments").insert({
@@ -88,9 +123,9 @@ export async function declarePayment(_prev: FormState, formData: FormData): Prom
   });
   if (error) {
     if (error.code === "23505" && error.message.includes("reference")) {
-      return { error: "Cette référence de transaction a déjà été déclarée.", values };
+      return { error: t.duplicate, values };
     }
-    return { error: GENERIC_ERROR, values };
+    return { error: t.generic, values };
   }
 
   redirect(offerId ? `/espace-pro/offres/${offerId}/visibilite?envoye=1` : "/espace-pro/abonnement?envoye=1");

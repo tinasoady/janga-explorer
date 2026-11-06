@@ -2,11 +2,46 @@
 
 import { useActionState, useState } from "react";
 import { Field, FormMessage, inputClass, primaryButtonClass } from "@/components/form-ui";
+import { useLocale } from "@/components/locale-provider";
 import { SubmitButton } from "@/components/submit-button";
 import { formatAriary } from "@/lib/format";
+import { messages } from "@/lib/i18n";
 import { MONTH_CHOICES, PAYMENT_METHODS, type PaymentMethod } from "@/lib/subscription";
 import type { FormState } from "../actions";
 import { declarePayment } from "./actions";
+
+const T = messages({
+  fr: {
+    noNumbers: "Les numéros de paiement ne sont pas encore renseignés. Contactez Janga Explorer pour payer.",
+    duration: "Durée",
+    months: (m: number) => `${m} mois`,
+    method: "Moyen de paiement",
+    send: (amount: string, method: string) => [`Envoyez `, amount, ` par ${method} au`],
+    to: (name: string) => `au nom de ${name}`,
+    keepSms: "Gardez le SMS de confirmation : il contient la référence de la transaction.",
+    payer: "Numéro qui a payé",
+    reference: "Référence de la transaction",
+    referenceHint: "Indiquée dans le SMS de confirmation de l'opérateur.",
+    proof: "Preuve du paiement",
+    proofHint: "Capture d'écran du SMS ou de l'application (JPEG, PNG ou WebP, 5 Mo maximum).",
+    submit: "J'ai payé : envoyer pour vérification",
+  },
+  en: {
+    noNumbers: "Payment numbers haven't been set up yet. Contact Janga Explorer to pay.",
+    duration: "Duration",
+    months: (m: number) => `${m} month${m > 1 ? "s" : ""}`,
+    method: "Payment method",
+    send: (amount: string, method: string) => [`Send `, amount, ` by ${method} to`],
+    to: (name: string) => `in the name of ${name}`,
+    keepSms: "Keep the confirmation SMS: it contains the transaction reference.",
+    payer: "Number that paid",
+    reference: "Transaction reference",
+    referenceHint: "Shown in the operator's confirmation SMS.",
+    proof: "Proof of payment",
+    proofHint: "Screenshot of the SMS or app (JPEG, PNG or WebP, 5 MB max).",
+    submit: "I've paid: send for checking",
+  },
+});
 
 type Props = {
   monthlyPrice: number;
@@ -24,11 +59,13 @@ export function PaymentForm({ monthlyPrice, offer, accountName, numbers }: Props
   const [months, setMonths] = useState(Number(state?.values?.months) || 1);
   const selected = methods.find((m) => m.key === method);
   const amount = offer ? offer.amount : months * monthlyPrice;
+  const locale = useLocale();
+  const t = T[locale];
 
   if (methods.length === 0) {
     return (
       <p className="rounded-2xl bg-surface p-5 text-center text-sm text-muted">
-        Les numéros de paiement ne sont pas encore renseignés. Contactez Janga Explorer pour payer.
+        {t.noNumbers}
       </p>
     );
   }
@@ -38,7 +75,7 @@ export function PaymentForm({ monthlyPrice, offer, accountName, numbers }: Props
       {offer ? (
         <input type="hidden" name="offerId" value={offer.id} />
       ) : (
-        <Field label="Durée">
+        <Field label={t.duration}>
           <select
             name="months"
             value={months}
@@ -47,7 +84,7 @@ export function PaymentForm({ monthlyPrice, offer, accountName, numbers }: Props
           >
             {MONTH_CHOICES.map((m) => (
               <option key={m} value={m}>
-                {m === 1 ? "1 mois" : `${m} mois`} · {formatAriary(m * monthlyPrice)}
+                {t.months(m)} · {formatAriary(m * monthlyPrice, locale)}
               </option>
             ))}
           </select>
@@ -55,7 +92,7 @@ export function PaymentForm({ monthlyPrice, offer, accountName, numbers }: Props
       )}
 
       <fieldset className="space-y-1.5">
-        <legend className="text-sm font-semibold">Moyen de paiement</legend>
+        <legend className="text-sm font-semibold">{t.method}</legend>
         <div className="grid grid-cols-3 gap-2">
           {methods.map((m) => (
             <label
@@ -81,17 +118,17 @@ export function PaymentForm({ monthlyPrice, offer, accountName, numbers }: Props
       {selected && (
         <div className="rounded-xl bg-surface p-4 text-sm">
           <p>
-            Envoyez <strong>{formatAriary(amount)}</strong> par {selected.label} au
+            {t.send(formatAriary(amount, locale), selected.label).map((part, i) =>
+              i === 1 ? <strong key={i}>{part}</strong> : part,
+            )}
           </p>
           <p className="mt-1 text-xl font-extrabold tracking-wide">{numbers[selected.key]}</p>
-          {accountName && <p className="text-muted">au nom de {accountName}</p>}
-          <p className="mt-2 text-xs text-muted">
-            Gardez le SMS de confirmation : il contient la référence de la transaction.
-          </p>
+          {accountName && <p className="text-muted">{t.to(accountName)}</p>}
+          <p className="mt-2 text-xs text-muted">{t.keepSms}</p>
         </div>
       )}
 
-      <Field label="Numéro qui a payé">
+      <Field label={t.payer}>
         <input
           name="payerPhone"
           type="tel"
@@ -104,7 +141,7 @@ export function PaymentForm({ monthlyPrice, offer, accountName, numbers }: Props
         />
       </Field>
 
-      <Field label="Référence de la transaction" hint="Indiquée dans le SMS de confirmation de l'opérateur.">
+      <Field label={t.reference} hint={t.referenceHint}>
         <input
           name="reference"
           required
@@ -115,7 +152,7 @@ export function PaymentForm({ monthlyPrice, offer, accountName, numbers }: Props
         />
       </Field>
 
-      <Field label="Preuve du paiement" hint="Capture d'écran du SMS ou de l'application (JPEG, PNG ou WebP, 5 Mo maximum).">
+      <Field label={t.proof} hint={t.proofHint}>
         <input
           name="proof"
           type="file"
@@ -126,7 +163,7 @@ export function PaymentForm({ monthlyPrice, offer, accountName, numbers }: Props
       </Field>
 
       <FormMessage error={state?.error} />
-      <SubmitButton className={primaryButtonClass}>J&apos;ai payé : envoyer pour vérification</SubmitButton>
+      <SubmitButton className={primaryButtonClass}>{t.submit}</SubmitButton>
     </form>
   );
 }

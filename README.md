@@ -148,6 +148,15 @@ confirmation par un admin, dans la même file de `/admin/abonnements`). À la co
 l'offre (`pass_until`) et le brouillon passe dans la file de validation des offres. Si le pro repousse ensuite la date
 de fin, l'offre redevient un brouillon et seuls les jours en plus sont à payer.
 
+### Billetterie des événements
+
+Pour une offre « Sorties » ou « Activités », le pro peut choisir « Plusieurs tarifs » : jusqu'à 6 billets (normal,
+VIP, étudiant…), chacun avec un prix en prévente, un prix sur place, ou les deux, et une date de fin de prévente
+facultative. La fiche de l'offre affiche le tableau des billets ; les cartes affichent « dès » le tarif le moins cher
+du jour (prévente tant qu'elle est ouverte, puis prix sur place) et, en prévente, le prix sur place barré. Les tarifs
+sont dans `offers.ticket_tiers` (JSON vérifié par la base) et `offers.presale_until` ; le calcul du prix du jour est dans
+`src/lib/tickets.ts`. Changer un tarif renvoie l'offre en validation, comme tout autre changement de contenu.
+
 ### Statistiques des offres
 
 Chaque vue de fiche (une fois par onglet) et chaque clic sur WhatsApp, Appeler ou Voir la localisation est compté par
@@ -166,6 +175,37 @@ essais, les comptes qui expirent sous 7 jours (avec un bouton de relance WhatsAp
 Les preuves sont stockées dans le bucket **privé** `payment-proofs` (lisible par le pro et les administrateurs, via des
 liens temporaires). Elles ne sont pas supprimées automatiquement avec un compte : les retirer à la main dans
 Supabase > Storage lors d'une fermeture de compte.
+
+## Démonstration (offres fictives)
+
+`src/data/demo-offers.ts` contient une cinquantaine d'offres fictives (établissements, prix et numéros inventés,
+préfixe 26199 attribué à aucun opérateur) dans les quatre rubriques, avec des billetteries, des offres qui se terminent
+bientôt et des nouveautés. Elles s'affichent quand Supabase n'est pas configuré, ou partout avec
+`NEXT_PUBLIC_DEMO_MODE=1`, pour montrer le site rempli sans toucher à la vraie base. Un bandeau jaune « Démonstration »
+est alors affiché en haut de chaque page ; les comptes, l'espace pro et l'administration sont indisponibles.
+
+Pour une adresse de démonstration à partager : créer un second projet Vercel (ou un déploiement de prévisualisation)
+avec `NEXT_PUBLIC_DEMO_MODE=1`. En local : `NEXT_PUBLIC_DEMO_MODE=1` dans `.env.local`, puis `npm run dev`.
+
+Les photos viennent d'Unsplash. `supabase/seed.sql` ne reprend que les 13 premières offres.
+
+## Langues (français / anglais)
+
+Tout le site existe en français et en anglais, **à la même adresse** : le choix est gardé dans le cookie `lang`
+(sélecteur FR / EN dans l'en-tête, le pied de page, le profil et l'en-tête mobile de l'accueil). À la première visite, la
+langue du navigateur décide (anglais si elle commence par `en`, sinon français).
+
+- Les pages sont sous `src/app/[lang]/` et prérendues dans les deux langues. `src/proxy.ts` réécrit `/bons-plans` en
+  `/fr/bons-plans` ou `/en/bons-plans`. Un lien préfixé (`/en/bons-plans`, pratique à partager) choisit la langue puis
+  redirige vers l'adresse sans préfixe.
+- Les textes sont rangés à côté du code qui les affiche, dans un objet `messages({ fr: {…}, en: {…} })` : TypeScript
+  refuse une traduction qui manque. Composants serveur : `getLocale()` (`src/lib/locale.ts`) ; composants client :
+  `useLocale()` ; Server Actions : `getRequestLocale()` (lit le cookie).
+- Ce que les pros saisissent (titres, descriptions, conditions) n'est pas traduit. Les messages WhatsApp envoyés aux
+  pros depuis l'administration restent en français, de même que l'e-mail de notification au superadmin.
+- En cas de désaccord, la version française des conditions d'utilisation fait foi.
+
+**Ajouter un texte** : le mettre dans les deux langues du `messages(...)` du fichier, jamais en dur dans le JSX.
 
 ## Favoris et alertes
 
@@ -205,11 +245,15 @@ des tables, ne pas en supprimer ni en renommer dans le même déploiement.
 ## Structure
 
 ```
-src/app/            pages : accueil, bons-plans, offres/[slug], favoris, alertes, profil, connexion, pro (présentation)
-src/app/espace-pro/ tableau de bord du professionnel : établissement, offres (créer, modifier, retirer), abonnement
-src/app/admin/      modération, création d'offres par l'admin, abonnements et paiements, demandes de compte pro et
-                    équipe d'administration (superadmin)
-src/proxy.ts        rafraîchit la session Supabase pour les pages avec compte
+src/app/[lang]/     pages (en français et en anglais) : accueil, bons-plans, offres/[slug], favoris, alertes, profil,
+                    connexion, pro (présentation), pages légales
+src/app/[lang]/espace-pro/ tableau de bord du professionnel : établissement, offres, abonnement, visibilité à la durée
+src/app/[lang]/admin/      modération, création d'offres par l'admin, abonnements et paiements, demandes de compte pro
+                    et équipe d'administration (superadmin)
+src/app/api/        statistiques des offres, favoris (hors segment de langue)
+src/proxy.ts        choisit la langue (cookie) et réécrit vers /fr ou /en ; rafraîchit la session Supabase des pages
+                    avec compte
+src/lib/i18n.ts     langues, messages bilingues ; src/lib/locale.ts : langue de la page ou de la requête
 src/components/     cartes d'offres, navigation, favoris, éléments de formulaire…
 src/lib/offers.ts   accès public aux offres (Supabase ou démo), filtres et tri
 src/lib/auth.ts     session, rôles et pages protégées
@@ -227,6 +271,7 @@ supabase/           migrations SQL (schéma, règles d'accès RLS), tests SQL et
 - [x] Abonnement des comptes pro (Mobile Money, paiements confirmés par un admin)
 - [x] Publication à la durée sans abonnement, statistiques des offres pour les pros
 - [x] Accueil : bon plan du jour, « Dernière chance », repères « Nouveau » / « Dernier jour »
+- [x] Site en français et en anglais (sélecteur de langue, même adresse)
 - [ ] Paiement Mobile Money confirmé automatiquement (API MVola / Orange Money)
 - [ ] Notifications des alertes (e-mail ou WhatsApp)
 - [ ] Plusieurs établissements par compte

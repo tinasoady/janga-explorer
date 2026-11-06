@@ -7,13 +7,43 @@ import { secondaryButtonClass, Unavailable } from "@/components/form-ui";
 import { SubmitButton } from "@/components/submit-button";
 import { requireUser } from "@/lib/auth";
 import { formatAriary } from "@/lib/format";
+import { messages, type Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import { filterOffers, getActiveOffers } from "@/lib/offers";
 import { isSupabaseConfigured } from "@/lib/supabase-server";
 import { BUDGETS, CATEGORIES, isCategory, type CategoryKey, type Offer } from "@/lib/types";
 import { deleteAlert, markAlertSeen } from "./actions";
 import { AlertForm } from "./alert-form";
 
-export const metadata: Metadata = { title: "Mes alertes" };
+const T = messages({
+  fr: {
+    title: "Mes alertes",
+    intro:
+      "Une alerte garde un œil sur les nouvelles offres qui vous intéressent. Elles apparaissent ici dès qu'elles sont en ligne.",
+    newAlert: "Nouvelle alerte",
+    fresh: (n: number) => `${n} nouvelle${n > 1 ? "s" : ""} offre${n > 1 ? "s" : ""}`,
+    nothingNew: "Rien de nouveau",
+    online: (n: number) => `${n} offre${n > 1 ? "s" : ""} en ligne`,
+    see: "Voir les offres",
+    markSeen: "Marquer comme vu",
+    remove: "Supprimer",
+  },
+  en: {
+    title: "My alerts",
+    intro: "An alert keeps an eye out for new deals you care about. They show up here as soon as they go live.",
+    newAlert: "New alert",
+    fresh: (n: number) => `${n} new deal${n > 1 ? "s" : ""}`,
+    nothingNew: "Nothing new",
+    online: (n: number) => `${n} deal${n > 1 ? "s" : ""} live`,
+    see: "See the deals",
+    markSeen: "Mark as seen",
+    remove: "Delete",
+  },
+});
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: T[await getLocale()].title };
+}
 
 type AlertRow = {
   id: string;
@@ -23,12 +53,13 @@ type AlertRow = {
   last_seen_at: string;
 };
 
-export default function AlertesPage({ searchParams }: PageProps<"/alertes">) {
+export default async function AlertesPage({ searchParams }: PageProps<"/[lang]/alertes">) {
+  const t = T[await getLocale()];
   return (
     <>
       <header className="flex items-center gap-2 px-2 py-3">
         <BackButton fallback="/profil" />
-        <h1 className="text-xl font-extrabold">Mes alertes</h1>
+        <h1 className="text-xl font-extrabold">{t.title}</h1>
       </header>
       <Suspense fallback={<div className="m-5 h-64 animate-pulse rounded-2xl bg-surface" aria-hidden />}>
         <Content searchParams={searchParams} />
@@ -41,7 +72,7 @@ function one(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-async function Content({ searchParams }: { searchParams: PageProps<"/alertes">["searchParams"] }) {
+async function Content({ searchParams }: { searchParams: PageProps<"/[lang]/alertes">["searchParams"] }) {
   if (!isSupabaseConfigured()) return <Unavailable />;
 
   const params = await searchParams;
@@ -53,6 +84,8 @@ async function Content({ searchParams }: { searchParams: PageProps<"/alertes">["
   };
 
   const { supabase } = await requireUser("/alertes");
+  const locale = await getLocale();
+  const t = T[locale];
   const [{ data }, offers] = await Promise.all([
     supabase
       .from("alerts")
@@ -65,38 +98,36 @@ async function Content({ searchParams }: { searchParams: PageProps<"/alertes">["
 
   return (
     <div className="space-y-6 px-5 pb-8">
-      <p className="text-sm text-muted">
-        Une alerte garde un œil sur les nouvelles offres qui vous intéressent. Elles apparaissent ici dès qu&apos;elles
-        sont en ligne.
-      </p>
+      <p className="text-sm text-muted">{t.intro}</p>
 
       {alerts.length > 0 && (
         <ul className="space-y-3">
           {alerts.map((alert) => (
             <li key={alert.id}>
-              <AlertCard alert={alert} offers={offers} />
+              <AlertCard alert={alert} offers={offers} locale={locale} />
             </li>
           ))}
         </ul>
       )}
 
       <section className="space-y-3">
-        <h2 className="text-lg font-extrabold">Nouvelle alerte</h2>
+        <h2 className="text-lg font-extrabold">{t.newAlert}</h2>
         <AlertForm defaults={defaults} />
       </section>
     </div>
   );
 }
 
-function alertLabel(alert: AlertRow) {
+function alertLabel(alert: AlertRow, locale: Locale) {
   const parts: string[] = [];
-  if (isCategory(alert.category)) parts.push(CATEGORIES.find((c) => c.key === alert.category)?.label ?? "");
-  if (alert.max_price) parts.push(`≤ ${formatAriary(alert.max_price)}`);
-  if (alert.query) parts.push(`« ${alert.query} »`);
+  if (isCategory(alert.category)) parts.push(CATEGORIES.find((c) => c.key === alert.category)?.label[locale] ?? "");
+  if (alert.max_price) parts.push(`≤ ${formatAriary(alert.max_price, locale)}`);
+  if (alert.query) parts.push(locale === "en" ? `“${alert.query}”` : `« ${alert.query} »`);
   return parts.join(" · ");
 }
 
-function AlertCard({ alert, offers }: { alert: AlertRow; offers: Offer[] }) {
+function AlertCard({ alert, offers, locale }: { alert: AlertRow; offers: Offer[]; locale: Locale }) {
+  const t = T[locale];
   const matches = filterOffers(offers, {
     category: isCategory(alert.category) ? (alert.category as CategoryKey) : undefined,
     maxPrice: alert.max_price ?? undefined,
@@ -114,32 +145,30 @@ function AlertCard({ alert, offers }: { alert: AlertRow; offers: Offer[] }) {
     <article className="space-y-3 rounded-2xl border border-line bg-white p-4 shadow-sm">
       <p className="flex items-center gap-2 font-bold">
         <Bell className="size-5 shrink-0 text-sea" aria-hidden />
-        {alertLabel(alert)}
+        {alertLabel(alert, locale)}
       </p>
       <p className="text-sm text-muted">
         {fresh.length > 0 ? (
-          <span className="font-semibold text-brand">
-            {fresh.length} nouvelle{fresh.length > 1 ? "s" : ""} offre{fresh.length > 1 ? "s" : ""}
-          </span>
+          <span className="font-semibold text-brand">{t.fresh(fresh.length)}</span>
         ) : (
-          "Rien de nouveau"
+          t.nothingNew
         )}
         {" · "}
-        {matches.length} offre{matches.length > 1 ? "s" : ""} en ligne
+        {t.online(matches.length)}
       </p>
       <div className="flex flex-wrap gap-2">
         <Link href={`/bons-plans?${params}`} className={secondaryButtonClass}>
-          Voir les offres
+          {t.see}
         </Link>
         {fresh.length > 0 && (
           <form action={markAlertSeen}>
             <input type="hidden" name="id" value={alert.id} />
-            <SubmitButton className={secondaryButtonClass}>Marquer comme vu</SubmitButton>
+            <SubmitButton className={secondaryButtonClass}>{t.markSeen}</SubmitButton>
           </form>
         )}
         <form action={deleteAlert}>
           <input type="hidden" name="id" value={alert.id} />
-          <SubmitButton className={`${secondaryButtonClass} text-red-700`}>Supprimer</SubmitButton>
+          <SubmitButton className={`${secondaryButtonClass} text-red-700`}>{t.remove}</SubmitButton>
         </form>
       </div>
     </article>

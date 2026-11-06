@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { safeNext } from "@/lib/auth";
+import { messages } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/locale";
 import { notifyNewProRequest } from "@/lib/notify";
 import { PRO_REQUEST_FIELDS, parseProRequest } from "@/lib/pro-request";
 import { createServerSupabase } from "@/lib/supabase-server";
@@ -12,6 +14,30 @@ export type AuthState = { error?: string; info?: string; email?: string } | null
 export type ProRequestState = { error?: string; info?: string; values?: Record<string, string> } | null;
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const T = messages({
+  fr: {
+    missing: "Renseignez votre e-mail et votre mot de passe.",
+    unavailable: "Les comptes ne sont pas encore disponibles.",
+    unconfirmed:
+      "Votre demande de compte est en cours de vérification. Vous pourrez vous connecter dès qu'elle sera approuvée.",
+    wrong: "E-mail ou mot de passe incorrect.",
+    requestsUnavailable: "Les demandes de compte ne sont pas encore disponibles.",
+    exists: "Un compte existe déjà avec cet e-mail. Connectez-vous.",
+    failed: "Envoi de la demande impossible. Réessayez dans un instant.",
+    sent: "Demande envoyée ! Nous vérifions votre établissement. Votre compte sera activé dès que la vérification est terminée.",
+  },
+  en: {
+    missing: "Enter your email and password.",
+    unavailable: "Accounts aren't available yet.",
+    unconfirmed: "Your account request is being reviewed. You'll be able to sign in as soon as it's approved.",
+    wrong: "Incorrect email or password.",
+    requestsUnavailable: "Account requests aren't available yet.",
+    exists: "An account already exists with this email. Please sign in.",
+    failed: "Couldn't send the request. Please try again in a moment.",
+    sent: "Request sent! We're checking your business. Your account will be activated as soon as that's done.",
+  },
+});
 
 function read(formData: FormData) {
   return {
@@ -32,18 +58,17 @@ async function siteOrigin() {
 
 export async function signIn(_prev: AuthState, formData: FormData): Promise<AuthState> {
   const { email, password, next } = read(formData);
-  if (!EMAIL.test(email) || !password) return { error: "Renseignez votre e-mail et votre mot de passe.", email };
+  const t = T[await getRequestLocale()];
+  if (!EMAIL.test(email) || !password) return { error: t.missing, email };
 
   const supabase = await createServerSupabase();
-  if (!supabase) return { error: "Les comptes ne sont pas encore disponibles.", email };
+  if (!supabase) return { error: t.unavailable, email };
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
     const unconfirmed = error.code === "email_not_confirmed";
     return {
-      error: unconfirmed
-        ? "Votre demande de compte est en cours de vérification. Vous pourrez vous connecter dès qu'elle sera approuvée."
-        : "E-mail ou mot de passe incorrect.",
+      error: unconfirmed ? t.unconfirmed : t.wrong,
       email,
     };
   }
@@ -57,13 +82,15 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
  */
 export async function requestProAccount(_prev: ProRequestState, formData: FormData): Promise<ProRequestState> {
   const values = Object.fromEntries(PRO_REQUEST_FIELDS.map((n) => [n, String(formData.get(n) ?? "")]));
+  const locale = await getRequestLocale();
+  const t = T[locale];
 
-  const parsed = parseProRequest(formData);
+  const parsed = parseProRequest(formData, locale);
   if (!parsed.ok) return { error: parsed.error, values };
   const { password, ...request } = parsed.value;
 
   const supabase = await createServerSupabase();
-  if (!supabase) return { error: "Les demandes de compte ne sont pas encore disponibles.", values };
+  if (!supabase) return { error: t.requestsUnavailable, values };
 
   const origin = await siteOrigin();
   const { data, error } = await supabase.auth.signUp({
@@ -84,10 +111,7 @@ export async function requestProAccount(_prev: ProRequestState, formData: FormDa
 
   if (error) {
     return {
-      error:
-        error.code === "user_already_exists"
-          ? "Un compte existe déjà avec cet e-mail. Connectez-vous."
-          : "Envoi de la demande impossible. Réessayez dans un instant.",
+      error: error.code === "user_already_exists" ? t.exists : t.failed,
       values,
     };
   }
@@ -99,9 +123,7 @@ export async function requestProAccount(_prev: ProRequestState, formData: FormDa
 
   // Session ouverte directement quand la confirmation par e-mail est désactivée dans Supabase.
   if (data.session) redirect("/espace-pro");
-  return {
-    info: "Demande envoyée ! Nous vérifions votre établissement. Votre compte sera activé dès que la vérification est terminée.",
-  };
+  return { info: t.sent };
 }
 
 export async function signOut() {
