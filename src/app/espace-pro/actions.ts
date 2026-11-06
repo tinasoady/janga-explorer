@@ -6,14 +6,19 @@ import { requireProAccess } from "@/lib/auth";
 import { removeOfferImage, uploadOfferImage } from "@/lib/offer-image";
 import { getMyBusiness, getMyOffer } from "@/lib/pro";
 import { makeSlug, parseBusiness, parseOffer } from "@/lib/pro-forms";
-import { canPublish, getMySubscription } from "@/lib/subscription";
+import { getToday } from "@/lib/offers";
+import { canPayPerOffer, canPublish, getMySubscription, MAX_PASS_DAYS, passDaysDue } from "@/lib/subscription";
 
 export type FormState = { error?: string; values?: Record<string, string> } | null;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const GENERIC_ERROR = "Enregistrement impossible. Réessayez dans un instant.";
-const SUBSCRIPTION_ERROR =
-  "Votre abonnement ne permet plus de publier : renouvelez-le depuis « Mon abonnement » pour envoyer cette offre.";
+const CANCELED_ERROR = "Votre abonnement a été annulé : contactez Janga Explorer pour publier à nouveau.";
+const TOO_LONG_ERROR =
+  `Sans abonnement, la visibilité se paie pour ${MAX_PASS_DAYS} jours au plus : choisissez une date de fin plus proche, ou abonnez-vous (plus avantageux sur une longue durée).`;
+
+/** Page où le pro paie les jours de visibilité d'une offre publiée sans abonnement. */
+const passPage = (offerId: string) => `/espace-pro/offres/${offerId}/visibilite`;
 
 /** Renvoie la saisie au formulaire : React vide les champs après une action, on les remplit à nouveau en cas d'erreur. */
 function echo(formData: FormData, names: string[]) {
@@ -59,12 +64,17 @@ export async function saveOffer(_prev: FormState, formData: FormData): Promise<F
   if (!parsed.ok) return { error: parsed.error, values };
   const o = parsed.value;
 
-  // Créer ou modifier une offre la (re)met en validation : il faut un abonnement actif (la base le vérifie aussi).
-  if (!canPublish(user, await getMySubscription(supabase, user.id))) return { error: SUBSCRIPTION_ERROR, values };
-
   const id = String(formData.get("id") ?? "");
   const existing = id ? await getMyOffer(supabase, business.id, UUID.test(id) ? id : "") : null;
   if (id && !existing) return { error: "Cette offre n'existe plus.", values };
+
+  // Créer ou modifier une offre la (re)met en validation. Sans abonnement actif, elle reste un brouillon tant que
+  // ses jours de visibilité ne sont pas payés (la base applique la même règle).
+  const subscription = await getMySubscription(supabase, user.id);
+  const subscribed = canPublish(user, subscription);
+  if (!subscribed && !canPayPerOffer(subscription)) return { error: CANCELED_ERROR, values };
+  const daysDue = subscribed ? 0 : passDaysDue({ validUntil: o.validUntil, passUntil: existing?.passUntil ?? null }, await getToday());
+  if (daysDue > MAX_PASS_DAYS) return { error: TOO_LONG_ERROR, values };
 
   // Photo : obligatoire à la création, facultative ensuite (on garde l'ancienne).
   const file = formData.get("image");
@@ -91,9 +101,13 @@ export async function saveOffer(_prev: FormState, formData: FormData): Promise<F
     valid_until: o.validUntil,
   };
 
-  const { error } = existing
-    ? await supabase.from("offers").update(row).eq("id", existing.id)
-    : await supabase.from("offers").insert({ ...row, business_id: business.id, slug: makeSlug(o.title), status: "pending" });
+  const { data: saved, error } = existing
+    ? await supabase.from("offers").update(row).eq("id", existing.id).select("id").single()
+    : await supabase
+        .from("offers")
+        .insert({ ...row, business_id: business.id, slug: makeSlug(o.title), status: subscribed ? "pending" : "draft" })
+        .select("id")
+        .single();
 
   if (error) {
     if (uploadedPath) await removeOfferImage(supabase, uploadedPath);
@@ -102,7 +116,7 @@ export async function saveOffer(_prev: FormState, formData: FormData): Promise<F
 
   // Une offre modifiée repasse en validation : elle doit disparaître du site public.
   updateTag("offers");
-  redirect("/espace-pro");
+  redirect(daysDue > 0 ? passPage(saved.id) : "/espace-pro");
 }
 
 async function ownedOfferId(formData: FormData) {
@@ -125,17 +139,25 @@ export async function archiveOffer(formData: FormData) {
   refresh();
 }
 
-/** Soumet à nouveau une offre retirée ou refusée : elle repasse en validation. */
+/**
+ * Soumet à nouveau une offre retirée ou refusée : elle repasse en validation. Sans abonnement, si ses jours de
+ * visibilité ne sont pas payés, la base en fait un brouillon et le pro est envoyé vers le paiement.
+ */
 export async function resubmitOffer(formData: FormData) {
   const target = await ownedOfferId(formData);
   if (!target) return;
-  if (!canPublish(target.user, await getMySubscription(target.supabase, target.user.id))) redirect("/espace-pro/abonnement");
+  const subscription = await getMySubscription(target.supabase, target.user.id);
+  const subscribed = canPublish(target.user, subscription);
+  if (!subscribed && !canPayPerOffer(subscription)) redirect("/espace-pro/abonnement");
   await target.supabase
     .from("offers")
     .update({ status: "pending" })
     .eq("id", target.id)
     .eq("business_id", target.businessId);
   updateTag("offers");
+  if (!subscribed && (await getMyOffer(target.supabase, target.businessId, target.id))?.status === "draft") {
+    redirect(passPage(target.id));
+  }
   refresh();
 }
 

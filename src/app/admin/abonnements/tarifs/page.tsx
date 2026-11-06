@@ -32,8 +32,9 @@ async function Content() {
   return (
     <div className="max-w-xl space-y-4 px-5 pb-8">
       <p className="text-sm text-muted">
-        Un mois d&apos;abonnement dure 30 jours. Le montant d&apos;un paiement est fixé au moment où le pro le déclare :
-        changer le prix ne modifie ni les paiements en attente, ni les périodes déjà payées.
+        Un mois d&apos;abonnement dure 30 jours. Sans abonnement, un pro peut aussi payer les jours de visibilité
+        d&apos;une offre (90 jours au plus). Le montant d&apos;un paiement est fixé au moment où le pro le déclare :
+        changer un prix ne modifie ni les paiements en attente, ni les périodes déjà payées.
       </p>
       <SettingsForm settings={settings} />
     </div>

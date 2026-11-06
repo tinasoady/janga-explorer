@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BadgeCheck, MessageCircle, Send, ShieldCheck, Store, Wallet } from "lucide-react";
+import { BadgeCheck, BarChart3, CalendarRange, MessageCircle, Repeat, Send, ShieldCheck, Store } from "lucide-react";
 import { BackButton } from "@/components/back-button";
-import { whatsappLink } from "@/lib/format";
+import { formatAriary, whatsappLink } from "@/lib/format";
+import { getPublicPricing } from "@/lib/offers";
 
 export const metadata: Metadata = {
   title: "Espace pro",
@@ -33,12 +34,13 @@ const STEPS = [
 ];
 
 const BENEFITS = [
-  { icon: Wallet, text: "Un mois d'essai gratuit, puis un abonnement mensuel payable par Mobile Money : offres illimitées, sans commission sur vos ventes." },
-  { icon: MessageCircle, text: "Les clients vous écrivent sur WhatsApp ou vous appellent : pas d'intermédiaire." },
+  { icon: MessageCircle, text: "Les clients vous écrivent sur WhatsApp ou vous appellent : pas d'intermédiaire, sans commission sur vos ventes." },
+  { icon: BarChart3, text: "Vous voyez combien de personnes ont regardé chaque offre et combien vous ont contacté." },
 ];
 
-export default function ProPage() {
+export default async function ProPage() {
   const contact = process.env.NEXT_PUBLIC_CONTACT_WHATSAPP;
+  const pricing = await getPublicPricing();
 
   return (
     <>
@@ -67,6 +69,43 @@ export default function ProPage() {
             </li>
           ))}
         </ul>
+
+        <section>
+          <h2 className="text-lg font-extrabold">Deux formules, payables par Mobile Money</h2>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <div className="rounded-2xl border-2 border-brand bg-white p-4">
+              <p className="flex items-center gap-2 font-bold">
+                <Repeat className="size-5 text-brand" aria-hidden />
+                Abonnement mensuel
+              </p>
+              {pricing && (
+                <p className="mt-2 text-2xl font-extrabold">
+                  {formatAriary(pricing.monthlyPrice)} <span className="text-sm font-semibold text-muted">/ mois</span>
+                </p>
+              )}
+              <p className="mt-1 text-sm text-ink/80">
+                Offres illimitées pendant la période payée.
+                {pricing && pricing.trialDays > 0 && ` Les ${pricing.trialDays} premiers jours sont offerts.`}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-line bg-white p-4">
+              <p className="flex items-center gap-2 font-bold">
+                <CalendarRange className="size-5 text-sea" aria-hidden />
+                À la durée, sans abonnement
+              </p>
+              {pricing && (
+                <p className="mt-2 text-2xl font-extrabold">
+                  {formatAriary(pricing.dayPrice)}{" "}
+                  <span className="text-sm font-semibold text-muted">/ jour et par offre</span>
+                </p>
+              )}
+              <p className="mt-1 text-sm text-ink/80">
+                Pour un événement ou une promotion de quelques jours : vous payez seulement les jours où l&apos;offre
+                est visible.
+              </p>
+            </div>
+          </div>
+        </section>
 
         <section>
           <h2 className="text-lg font-extrabold">Comment ça marche</h2>

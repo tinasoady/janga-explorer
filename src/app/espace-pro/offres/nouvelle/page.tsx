@@ -6,7 +6,7 @@ import { Unavailable } from "@/components/form-ui";
 import { requireProAccess } from "@/lib/auth";
 import { getToday } from "@/lib/offers";
 import { getMyBusiness } from "@/lib/pro";
-import { canPublish, getMySubscription } from "@/lib/subscription";
+import { canPayPerOffer, canPublish, getMySubscription, getSubscriptionSettings } from "@/lib/subscription";
 import { isSupabaseConfigured } from "@/lib/supabase-server";
 import { OfferForm } from "../../offer-form";
 
@@ -29,13 +29,20 @@ export default function NouvelleOffrePage() {
 async function Content() {
   if (!isSupabaseConfigured()) return <Unavailable />;
   const { user, supabase } = await requireProAccess("/espace-pro/offres/nouvelle");
-  const [business, subscription] = await Promise.all([getMyBusiness(supabase, user.id), getMySubscription(supabase, user.id)]);
+  const [business, subscription, settings, today] = await Promise.all([
+    getMyBusiness(supabase, user.id),
+    getMySubscription(supabase, user.id),
+    getSubscriptionSettings(supabase),
+    getToday(),
+  ]);
   if (!business) redirect("/espace-pro/etablissement");
-  if (!canPublish(user, subscription)) redirect("/espace-pro/abonnement");
+  const subscribed = canPublish(user, subscription);
+  if (!subscribed && !canPayPerOffer(subscription)) redirect("/espace-pro/abonnement");
+  const dayPass = !subscribed && settings ? { dayPrice: settings.dayPrice, today } : undefined;
 
   return (
     <div className="px-5 pb-8">
-      <OfferForm offer={null} minDate={await getToday()} />
+      <OfferForm offer={null} minDate={today} dayPass={dayPass} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SessionUser } from "./auth";
+import { addDaysIso, daysBetween } from "./format";
 import { checkImage } from "./pro-forms";
 
 // Abonnement des comptes pro : essai gratuit à l'approbation, puis paiements Mobile Money confirmés par un admin.
@@ -33,6 +34,9 @@ export function isPaymentMethod(value: string): value is PaymentMethod {
 
 /** Durées proposées au paiement (un mois = 30 jours). */
 export const MONTH_CHOICES = [1, 3, 6, 12] as const;
+
+/** Jours de visibilité payables en une fois pour une offre (même limite que la base). */
+export const MAX_PASS_DAYS = 90;
 
 export type PaymentStatus = "pending" | "confirmed" | "rejected";
 
@@ -91,6 +95,20 @@ export function canPublish(user: SessionUser, sub: Subscription | null) {
   return user.role === "admin" || user.role === "superadmin" || isSubscriptionActive(sub);
 }
 
+/** Sans abonnement actif, un pro peut payer la visibilité de ses offres à la journée, sauf si son compte est annulé. */
+export function canPayPerOffer(sub: Subscription | null) {
+  return sub !== null && sub.status !== "canceled";
+}
+
+/**
+ * Jours de visibilité qu'il reste à payer pour une offre : du lendemain des jours déjà payés (ou d'aujourd'hui)
+ * jusqu'à sa date de fin incluse. Même calcul que subscription_payments_prepare() dans la base.
+ */
+export function passDaysDue(offer: { validUntil: string; passUntil: string | null }, today: string) {
+  const start = offer.passUntil && offer.passUntil >= today ? addDaysIso(offer.passUntil, 1) : today;
+  return Math.max(0, daysBetween(start, offer.validUntil) + 1);
+}
+
 export async function getMySubscription(supabase: SupabaseClient, userId: string): Promise<Subscription | null> {
   const { data } = await supabase
     .from("subscriptions")
@@ -102,6 +120,8 @@ export async function getMySubscription(supabase: SupabaseClient, userId: string
 
 export type SubscriptionSettings = {
   monthlyPrice: number;
+  /** Prix d'un jour de visibilité pour une offre publiée sans abonnement. */
+  dayPrice: number;
   trialDays: number;
   accountName: string;
   numbers: Record<PaymentMethod, string>;
@@ -109,6 +129,7 @@ export type SubscriptionSettings = {
 
 type SettingsRow = {
   monthly_price: number;
+  day_price: number;
   trial_days: number;
   account_name: string;
   mvola_number: string;
@@ -119,11 +140,12 @@ type SettingsRow = {
 export async function getSubscriptionSettings(supabase: SupabaseClient): Promise<SubscriptionSettings | null> {
   const { data } = await supabase
     .from("subscription_settings")
-    .select("monthly_price, trial_days, account_name, mvola_number, orange_money_number, airtel_money_number")
+    .select("monthly_price, day_price, trial_days, account_name, mvola_number, orange_money_number, airtel_money_number")
     .maybeSingle<SettingsRow>();
   if (!data) return null;
   return {
     monthlyPrice: data.monthly_price,
+    dayPrice: data.day_price,
     trialDays: data.trial_days,
     accountName: data.account_name,
     numbers: {
@@ -134,10 +156,18 @@ export async function getSubscriptionSettings(supabase: SupabaseClient): Promise
   };
 }
 
+export type PaymentKind = "subscription" | "offer";
+
 export type PaymentRow = {
   id: string;
   user_id: string;
-  months: number;
+  kind: PaymentKind;
+  /** Abonnement : nombre de mois payés (null pour un paiement de visibilité). */
+  months: number | null;
+  /** Visibilité d'une offre : l'offre (null si elle a été supprimée), le nombre de jours et le dernier jour payé. */
+  offer_id: string | null;
+  days: number | null;
+  covers_until: string | null;
   amount: number;
   method: PaymentMethod;
   payer_phone: string;
@@ -150,6 +180,12 @@ export type PaymentRow = {
   reviewed_at: string | null;
   created_at: string;
 };
+
+/** "3 mois" pour un abonnement, "5 jours de visibilité" pour une offre. */
+export function paymentLabel(p: Pick<PaymentRow, "kind" | "months" | "days">) {
+  if (p.kind === "offer") return `${p.days} jour${p.days === 1 ? "" : "s"} de visibilité`;
+  return `${p.months} mois`;
+}
 
 export async function getMyPayments(supabase: SupabaseClient, userId: string): Promise<PaymentRow[]> {
   const { data, error } = await supabase

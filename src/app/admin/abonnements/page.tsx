@@ -11,6 +11,7 @@ import { dateOf, formatAriary, formatShortDate, todayIso, whatsappLink } from "@
 import {
   getSubscriptionSettings,
   PAYMENT_STATUS_LABEL,
+  paymentLabel,
   paymentMethodLabel,
   signProofUrls,
   SUBSCRIPTION_STATUS_LABEL,
@@ -124,7 +125,14 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/admin/abo
 
   const pending = payments.filter((p) => p.status === "pending").reverse(); // les plus anciens d'abord
   const reviewed = payments.filter((p) => p.status !== "pending").slice(0, 20);
-  const proofs = await signProofUrls(supabase, pending.map((p) => p.proof_path));
+  const offerIds = pending.flatMap((p) => (p.offer_id ? [p.offer_id] : []));
+  const [proofs, { data: paidOffers }] = await Promise.all([
+    signProofUrls(supabase, pending.map((p) => p.proof_path)),
+    offerIds.length
+      ? supabase.from("offers").select("id, title").in("id", offerIds)
+      : Promise.resolve({ data: [] as { id: string; title: string }[] }),
+  ]);
+  const offerTitles = new Map((paidOffers ?? []).map((o: { id: string; title: string }) => [o.id, o.title]));
 
   const revenue: RevenueMonth[] = months.map((m) => {
     const inMonth = payments.filter(
@@ -146,7 +154,8 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/admin/abo
       <div className="flex flex-wrap items-center gap-2">
         {settings && (
           <p className="text-sm text-muted">
-            {formatAriary(settings.monthlyPrice)} / mois · essai de {settings.trialDays} jours
+            {formatAriary(settings.monthlyPrice)} / mois · {formatAriary(settings.dayPrice)} / jour et par offre · essai
+            de {settings.trialDays} jours
           </p>
         )}
         {superadmin && (
@@ -175,7 +184,13 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/admin/abo
 
       <Section title={`Paiements à vérifier (${pending.length})`} empty="Aucun paiement en attente.">
         {pending.map((p) => (
-          <PaymentCard key={p.id} payment={p} pro={byUser.get(p.user_id)} proofUrl={proofs.get(p.proof_path)} />
+          <PaymentCard
+            key={p.id}
+            payment={p}
+            pro={byUser.get(p.user_id)}
+            proofUrl={proofs.get(p.proof_path)}
+            offerTitle={p.offer_id ? offerTitles.get(p.offer_id) : undefined}
+          />
         ))}
       </Section>
 
@@ -216,7 +231,7 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/admin/abo
               <li key={p.id} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-4 py-2.5">
                 <span className="min-w-0 font-semibold">{byUser.get(p.user_id)?.company ?? "Compte supprimé"}</span>
                 <span className="text-muted">
-                  {formatAriary(p.amount)} · {p.months} mois · {paymentMethodLabel(p.method)}
+                  {formatAriary(p.amount)} · {paymentLabel(p)} · {paymentMethodLabel(p.method)}
                   {p.reviewed_at && ` · ${formatShortDate(dateOf(p.reviewed_at))}`}
                 </span>
                 <span
@@ -275,7 +290,18 @@ function Section({ title, empty, children }: { title: string; empty: string; chi
   );
 }
 
-function PaymentCard({ payment: p, pro, proofUrl }: { payment: PaymentRow; pro?: Pro; proofUrl?: string }) {
+function PaymentCard({
+  payment: p,
+  pro,
+  proofUrl,
+  offerTitle,
+}: {
+  payment: PaymentRow;
+  pro?: Pro;
+  proofUrl?: string;
+  /** Paiement de visibilité : titre de l'offre concernée. */
+  offerTitle?: string;
+}) {
   const canceled = pro?.sub.status === "canceled";
 
   return (
@@ -302,8 +328,14 @@ function PaymentCard({ payment: p, pro, proofUrl }: { payment: PaymentRow; pro?:
           <p className="truncate text-sm text-muted">{pro?.email}</p>
           <p className="text-lg font-extrabold text-brand">{formatAriary(p.amount)}</p>
           <p className="text-sm">
-            {p.months} mois · {paymentMethodLabel(p.method)}
+            {paymentLabel(p)} · {paymentMethodLabel(p.method)}
           </p>
+          {p.kind === "offer" && (
+            <p className="text-sm text-muted">
+              Offre « {offerTitle ?? "supprimée"} »
+              {p.covers_until && `, jusqu'au ${formatShortDate(p.covers_until)}`}
+            </p>
+          )}
         </div>
       </div>
 
@@ -329,6 +361,7 @@ function PaymentCard({ payment: p, pro, proofUrl }: { payment: PaymentRow; pro?:
       <p className="text-xs text-muted">
         Vérifiez sur le relevé {paymentMethodLabel(p.method)} que {formatAriary(p.amount)} ont bien été reçus de ce
         numéro avec cette référence avant de confirmer.
+        {p.kind === "offer" && " Une fois confirmé, l'offre arrive dans la file de validation des offres."}
       </p>
 
       {canceled && (

@@ -1,6 +1,6 @@
 "use server";
 
-import { refresh } from "next/cache";
+import { refresh, updateTag } from "next/cache";
 import { requireAdmin, requireSuperadmin } from "@/lib/auth";
 
 export type SettingsState = { error?: string; info?: string } | null;
@@ -17,7 +17,10 @@ const targetId = (formData: FormData) => {
 
 const reasonOf = (formData: FormData) => String(formData.get("reason") ?? "").trim().slice(0, 300) || null;
 
-/** Confirme un paiement : l'abonnement est prolongé de 30 jours par mois payé. Ouvert à tous les administrateurs. */
+/**
+ * Confirme un paiement : l'abonnement est prolongé de 30 jours par mois payé, ou l'offre payée à la durée passe en
+ * validation. Ouvert à tous les administrateurs.
+ */
 export async function confirmPayment(formData: FormData) {
   const { supabase } = await requireAdmin();
   const id = targetId(formData);
@@ -70,6 +73,7 @@ export async function saveSettings(_prev: SettingsState, formData: FormData): Pr
   const { supabase } = await requireSuperadmin(`${PATH}/tarifs`);
 
   const monthlyPrice = Number(digits(formData, "monthlyPrice"));
+  const dayPrice = Number(digits(formData, "dayPrice"));
   const trialDays = Number(digits(formData, "trialDays"));
   const accountName = text(formData, "accountName");
   const numbers = {
@@ -80,6 +84,9 @@ export async function saveSettings(_prev: SettingsState, formData: FormData): Pr
 
   if (!Number.isInteger(monthlyPrice) || monthlyPrice < 0 || monthlyPrice > 10_000_000) {
     return { error: "Le prix doit être un nombre entier d'ariary (10 000 000 Ar maximum)." };
+  }
+  if (!Number.isInteger(dayPrice) || dayPrice < 0 || dayPrice > 1_000_000) {
+    return { error: "Le prix par jour doit être un nombre entier d'ariary (1 000 000 Ar maximum)." };
   }
   if (!Number.isInteger(trialDays) || trialDays < 0 || trialDays > 365) {
     return { error: "La durée de l'essai doit être comprise entre 0 et 365 jours." };
@@ -93,6 +100,7 @@ export async function saveSettings(_prev: SettingsState, formData: FormData): Pr
     .from("subscription_settings")
     .update({
       monthly_price: monthlyPrice,
+      day_price: dayPrice,
       trial_days: trialDays,
       account_name: accountName,
       ...numbers,
@@ -101,6 +109,8 @@ export async function saveSettings(_prev: SettingsState, formData: FormData): Pr
     .eq("id", true);
   if (error) return { error: "Enregistrement impossible. Réessayez dans un instant." };
 
+  // Les prix sont aussi affichés sur l'accueil et la page de présentation pro.
+  updateTag("pricing");
   refresh();
   return { info: "Réglages enregistrés." };
 }

@@ -2,17 +2,18 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
-import { CalendarDays, Clock, Lock, Pencil, Plus, Store, XCircle } from "lucide-react";
+import { CalendarDays, Clock, Eye, Lock, MapPin, MessageCircle, Pencil, Phone, Plus, Store, Wallet, XCircle } from "lucide-react";
 import { BackButton } from "@/components/back-button";
 import { secondaryButtonClass, Unavailable } from "@/components/form-ui";
 import { SubmitButton } from "@/components/submit-button";
 import { hasProAccess, requireUser } from "@/lib/auth";
-import { formatAriary, formatShortDate } from "@/lib/format";
+import { addDaysIso, formatAriary, formatShortDate } from "@/lib/format";
 import { STATUS_LABEL, type ManagedOffer } from "@/lib/managed";
 import { getToday } from "@/lib/offers";
 import { getMyBusiness, getMyOffers, getMyProRequest, type MyProRequest } from "@/lib/pro";
 import { proKindLabel } from "@/lib/pro-request";
-import { canPublish, getMySubscription, type Subscription } from "@/lib/subscription";
+import { EMPTY_STATS, getOfferStats, STATS_DAYS, type OfferStats } from "@/lib/stats";
+import { canPayPerOffer, canPublish, getMySubscription, getSubscriptionSettings } from "@/lib/subscription";
 import { isSupabaseConfigured } from "@/lib/supabase-server";
 import { archiveOffer, deleteOffer, resubmitOffer } from "./actions";
 import { SubscriptionStatus } from "./subscription-status";
@@ -49,11 +50,14 @@ async function Dashboard() {
   // Compte pro pas encore approuvé : on montre où en est la demande plutôt que le tableau de bord.
   if (!hasProAccess(user)) return <RequestStatus request={await getMyProRequest(supabase, user.id)} />;
 
-  const [business, subscription] = await Promise.all([
+  const [business, subscription, settings] = await Promise.all([
     getMyBusiness(supabase, user.id),
     getMySubscription(supabase, user.id),
+    getSubscriptionSettings(supabase),
   ]);
   const publishable = canPublish(user, subscription);
+  // Sans abonnement actif, le pro peut quand même publier en payant les jours de visibilité de chaque offre.
+  const payPerOffer = !publishable && canPayPerOffer(subscription);
   const banner = subscription && <SubscriptionStatus subscription={subscription} compact />;
 
   if (!business) {
@@ -78,7 +82,21 @@ async function Dashboard() {
     );
   }
 
-  const [offers, today] = await Promise.all([getMyOffers(supabase, business.id), getToday()]);
+  const [offers, today, { data: pendingPasses }] = await Promise.all([
+    getMyOffers(supabase, business.id),
+    getToday(),
+    supabase.from("subscription_payments").select("offer_id").eq("kind", "offer").eq("status", "pending"),
+  ]);
+  const paying = new Set((pendingPasses ?? []).map((p: { offer_id: string | null }) => p.offer_id));
+  const stats = await getOfferStats(
+    supabase,
+    offers.map((o) => o.id),
+    addDaysIso(today, -(STATS_DAYS - 1)),
+  );
+  const total = [...stats.values()].reduce(
+    (sum, s) => ({ views: sum.views + s.views, contacts: sum.contacts + s.whatsapp + s.calls }),
+    { views: 0, contacts: 0 },
+  );
 
   return (
     <div className="space-y-5 px-5 pb-8">
@@ -97,16 +115,41 @@ async function Dashboard() {
         </Link>
       </section>
 
-      {publishable ? (
-        <Link
-          href="/espace-pro/offres/nouvelle"
-          className="flex items-center justify-center gap-2 rounded-full bg-brand py-3 font-bold text-white shadow-md shadow-brand/30"
-        >
-          <Plus className="size-5" aria-hidden />
-          Publier une offre
-        </Link>
+      {publishable || payPerOffer ? (
+        <div className="space-y-2">
+          <Link
+            href="/espace-pro/offres/nouvelle"
+            className="flex items-center justify-center gap-2 rounded-full bg-brand py-3 font-bold text-white shadow-md shadow-brand/30"
+          >
+            <Plus className="size-5" aria-hidden />
+            Publier une offre
+          </Link>
+          {payPerOffer && settings && (
+            <p className="text-center text-xs text-muted">
+              Sans abonnement, vous payez {formatAriary(settings.dayPrice)} par jour de visibilité de l&apos;offre.{" "}
+              <Link href="/espace-pro/abonnement" className="font-semibold text-brand">
+                Ou abonnez-vous
+              </Link>
+            </p>
+          )}
+        </div>
       ) : (
-        <PublishLocked subscription={subscription} />
+        <PublishLocked />
+      )}
+
+      {offers.length > 0 && (
+        <section aria-label="Statistiques" className="grid grid-cols-2 gap-3">
+          <div className="rounded-2xl border border-line bg-white p-4">
+            <p className="text-xs font-semibold text-muted">Vues de vos offres</p>
+            <p className="mt-1 text-2xl font-extrabold tabular-nums">{total.views}</p>
+            <p className="text-xs text-muted">sur {STATS_DAYS} jours</p>
+          </div>
+          <div className="rounded-2xl border border-line bg-white p-4">
+            <p className="text-xs font-semibold text-muted">Clients qui vous ont contacté</p>
+            <p className="mt-1 text-2xl font-extrabold text-verified tabular-nums">{total.contacts}</p>
+            <p className="text-xs text-muted">WhatsApp et appels, sur {STATS_DAYS} jours</p>
+          </div>
+        </section>
       )}
 
       <section>
@@ -119,7 +162,13 @@ async function Dashboard() {
           <ul className="mt-3 space-y-3">
             {offers.map((offer) => (
               <li key={offer.id}>
-                <OfferItem offer={offer} today={today} publishable={publishable} />
+                <OfferItem
+                  offer={offer}
+                  today={today}
+                  canSubmit={publishable || payPerOffer}
+                  paying={paying.has(offer.id)}
+                  stats={stats.get(offer.id) ?? EMPTY_STATS}
+                />
               </li>
             ))}
           </ul>
@@ -129,28 +178,15 @@ async function Dashboard() {
   );
 }
 
-/** Remplace le bouton « Publier une offre » quand l'abonnement ne permet plus de publier. */
-function PublishLocked({ subscription }: { subscription: Subscription | null }) {
-  const canceled = !subscription || subscription.status === "canceled";
+/** Remplace le bouton « Publier une offre » quand l'abonnement a été annulé par Janga Explorer. */
+function PublishLocked() {
   return (
     <div className="space-y-2 rounded-2xl bg-surface p-4 text-center">
       <p className="flex items-center justify-center gap-2 font-bold">
         <Lock className="size-4" aria-hidden />
         Publication en pause
       </p>
-      <p className="text-sm text-muted">
-        {canceled
-          ? "Votre abonnement est annulé. Contactez Janga Explorer pour le réactiver."
-          : "Abonnez-vous pour publier de nouvelles offres, en nombre illimité."}
-      </p>
-      {!canceled && (
-        <Link
-          href="/espace-pro/abonnement"
-          className="inline-block rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-white"
-        >
-          M&apos;abonner
-        </Link>
-      )}
+      <p className="text-sm text-muted">Votre abonnement est annulé. Contactez Janga Explorer pour le réactiver.</p>
     </div>
   );
 }
@@ -218,9 +254,33 @@ function RequestStatus({ request }: { request: MyProRequest | null }) {
   );
 }
 
-function OfferItem({ offer, today, publishable }: { offer: ManagedOffer; today: string; publishable: boolean }) {
+function OfferItem({
+  offer,
+  today,
+  canSubmit,
+  paying,
+  stats,
+}: {
+  offer: ManagedOffer;
+  today: string;
+  canSubmit: boolean;
+  /** Un paiement de visibilité de cette offre attend la confirmation d'un admin. */
+  paying: boolean;
+  stats: OfferStats;
+}) {
   const expired = offer.status === "published" && offer.validUntil < today;
-  const canResubmit = publishable && (offer.status === "archived" || offer.status === "rejected");
+  const canResubmit = canSubmit && (offer.status === "archived" || offer.status === "rejected");
+  // Côté pro, un brouillon est une offre publiée sans abonnement dont les jours de visibilité restent à payer.
+  const toPay = offer.status === "draft";
+  const statusLabel = expired
+    ? "Terminée"
+    : toPay
+      ? paying
+        ? "Paiement en vérification"
+        : "Visibilité à payer"
+      : STATUS_LABEL[offer.status];
+  const statusTone = expired ? STATUS_TONE.archived : toPay ? STATUS_TONE.pending : STATUS_TONE[offer.status];
+  const hasStats = stats.views + stats.whatsapp + stats.calls + stats.maps > 0;
   const canArchive = offer.status === "published" || offer.status === "pending";
 
   return (
@@ -240,17 +300,33 @@ function OfferItem({ offer, today, publishable }: { offer: ManagedOffer; today: 
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <span
-          className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-            expired ? STATUS_TONE.archived : STATUS_TONE[offer.status]
-          }`}
-        >
-          {expired ? "Terminée" : STATUS_LABEL[offer.status]}
-        </span>
+        <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusTone}`}>{statusLabel}</span>
         {offer.status === "published" && offer.isVerified && (
           <span className="text-xs font-semibold text-verified">Offre vérifiée</span>
         )}
       </div>
+
+      {hasStats && (
+        <ul
+          aria-label={`Statistiques des ${STATS_DAYS} derniers jours`}
+          className="flex flex-wrap gap-x-4 gap-y-1 rounded-xl bg-surface px-3 py-2 text-xs text-ink/80"
+        >
+          <StatItem icon={Eye} value={stats.views} label="vues" />
+          <StatItem icon={MessageCircle} value={stats.whatsapp} label="WhatsApp" />
+          <StatItem icon={Phone} value={stats.calls} label="appels" />
+          <StatItem icon={MapPin} value={stats.maps} label="itinéraires" />
+        </ul>
+      )}
+
+      {toPay && !paying && (
+        <Link
+          href={`/espace-pro/offres/${offer.id}/visibilite`}
+          className="flex items-center justify-center gap-2 rounded-full bg-brand py-2.5 text-sm font-bold text-white"
+        >
+          <Wallet className="size-4" aria-hidden />
+          Payer la visibilité
+        </Link>
+      )}
 
       {offer.status === "rejected" && offer.rejectionReason && (
         <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">Motif : {offer.rejectionReason}</p>
@@ -284,5 +360,14 @@ function OfferItem({ offer, today, publishable }: { offer: ManagedOffer; today: 
         </form>
       </div>
     </article>
+  );
+}
+
+function StatItem({ icon: Icon, value, label }: { icon: typeof Eye; value: number; label: string }) {
+  return (
+    <li className="flex items-center gap-1">
+      <Icon className="size-3.5 text-muted" aria-hidden />
+      <span className="font-bold tabular-nums">{value}</span> {label}
+    </li>
   );
 }

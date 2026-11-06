@@ -6,6 +6,7 @@ import { Unavailable } from "@/components/form-ui";
 import { requireProAccess } from "@/lib/auth";
 import { getToday } from "@/lib/offers";
 import { getMyBusiness, getMyOffer } from "@/lib/pro";
+import { canPublish, getMySubscription, getSubscriptionSettings } from "@/lib/subscription";
 import { isSupabaseConfigured } from "@/lib/supabase-server";
 import { OfferForm } from "../../offer-form";
 
@@ -35,9 +36,17 @@ async function Content({ params }: { params: PageProps<"/espace-pro/offres/[id]"
   const offer = /^[0-9a-f-]{36}$/i.test(id) ? await getMyOffer(supabase, business.id, id) : null;
   if (!offer) notFound();
 
+  const [subscription, settings, today] = await Promise.all([
+    getMySubscription(supabase, user.id),
+    getSubscriptionSettings(supabase),
+    getToday(),
+  ]);
+  // Sans abonnement, le formulaire montre les jours de visibilité qu'il restera à payer après la modification.
+  const dayPass = !canPublish(user, subscription) && settings ? { dayPrice: settings.dayPrice, today } : undefined;
+
   return (
     <div className="px-5 pb-8">
-      <OfferForm offer={offer} minDate={await getToday()} />
+      <OfferForm offer={offer} minDate={today} dayPass={dayPass} />
     </div>
   );
 }

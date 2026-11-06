@@ -7,7 +7,8 @@ import { BackButton } from "@/components/back-button";
 import { CategoryIcon } from "@/components/category";
 import { FavoriteButton } from "@/components/favorite-button";
 import { WhatsAppIcon } from "@/components/contact-links";
-import { DiscountBadge } from "@/components/offer-card";
+import { DiscountBadge, HighlightBadge } from "@/components/offer-card";
+import { TrackedLink, TrackOfferView } from "@/components/offer-tracking";
 import {
   formatAriary,
   formatLongDate,
@@ -57,6 +58,7 @@ async function OfferDetails({ params }: { params: Promise<{ slug: string }> }) {
     // Téléphone : photo pleine largeur puis détails. Tablette : colonne centrée. Ordinateur : photo à gauche (qui
     // reste visible au défilement) et détails à droite.
     <article className="md:mx-auto md:max-w-3xl md:pt-6 lg:grid lg:max-w-none lg:grid-cols-2 lg:items-start lg:gap-10 lg:px-4 lg:pt-8">
+      <TrackOfferView offerId={offer.id} />
       <div className="relative aspect-[4/3] w-full overflow-hidden md:rounded-3xl lg:sticky lg:top-24">
         <Image
           src={offer.imageUrl}
@@ -95,11 +97,14 @@ async function OfferDetails({ params }: { params: Promise<{ slug: string }> }) {
               <p className="text-sm text-muted line-through">{formatAriary(offer.priceOriginal)}</p>
             )}
             <p className="text-3xl font-extrabold text-brand">{formatAriary(offer.priceOffer)}</p>
-            {savings > 0 && (
-              <p className="mt-2 inline-block rounded-full bg-verified px-3 py-1 text-xs font-bold text-white">
-                Économisez {formatAriary(savings)}
-              </p>
-            )}
+            <div className="mt-2 flex flex-wrap gap-2">
+              {savings > 0 && (
+                <p className="rounded-full bg-verified px-3 py-1 text-xs font-bold text-white">
+                  Économisez {formatAriary(savings)}
+                </p>
+              )}
+              <HighlightBadge offer={offer} today={today} className="px-3 py-1 text-xs" />
+            </div>
           </div>
           <DiscountBadge offer={offer} tone="soft" size="lg" />
         </div>
@@ -137,7 +142,9 @@ async function OfferDetails({ params }: { params: Promise<{ slug: string }> }) {
 
         <div className="space-y-3">
           {offer.business.whatsapp && (
-            <a
+            <TrackedLink
+              offerId={offer.id}
+              event="whatsapp"
               href={whatsappLink(offer.business.whatsapp, message)}
               target="_blank"
               rel="noopener noreferrer"
@@ -145,9 +152,11 @@ async function OfferDetails({ params }: { params: Promise<{ slug: string }> }) {
             >
               <WhatsAppIcon />
               Contacter sur WhatsApp
-            </a>
+            </TrackedLink>
           )}
-          <a
+          <TrackedLink
+            offerId={offer.id}
+            event="map"
             href={mapsLink(offer)}
             target="_blank"
             rel="noopener noreferrer"
@@ -155,15 +164,17 @@ async function OfferDetails({ params }: { params: Promise<{ slug: string }> }) {
           >
             <MapPin className="size-5" aria-hidden />
             Voir la localisation
-          </a>
+          </TrackedLink>
           {offer.business.phone && (
-            <a
+            <TrackedLink
+              offerId={offer.id}
+              event="call"
               href={`tel:${offer.business.phone.replace(/\s/g, "")}`}
               className="flex items-center justify-center gap-2 rounded-full border border-line py-3 font-semibold"
             >
               <Phone className="size-5" aria-hidden />
               Appeler {offer.business.phone}
-            </a>
+            </TrackedLink>
           )}
         </div>
 

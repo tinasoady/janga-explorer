@@ -10,42 +10,49 @@ import { declarePayment } from "./actions";
 
 type Props = {
   monthlyPrice: number;
+  /** Paiement des jours de visibilité d'une offre (au lieu de mois d'abonnement) : montant fixé d'avance. */
+  offer?: { id: string; days: number; amount: number };
   accountName: string;
   /** Numéros de réception renseignés par l'administration (les moyens sans numéro ne sont pas proposés). */
   numbers: Partial<Record<PaymentMethod, string>>;
 };
 
-export function PaymentForm({ monthlyPrice, accountName, numbers }: Props) {
+export function PaymentForm({ monthlyPrice, offer, accountName, numbers }: Props) {
   const [state, action] = useActionState<FormState, FormData>(declarePayment, null);
   const methods = PAYMENT_METHODS.filter((m) => numbers[m.key]);
   const [method, setMethod] = useState<string>(state?.values?.method || methods[0]?.key || "");
   const [months, setMonths] = useState(Number(state?.values?.months) || 1);
   const selected = methods.find((m) => m.key === method);
+  const amount = offer ? offer.amount : months * monthlyPrice;
 
   if (methods.length === 0) {
     return (
       <p className="rounded-2xl bg-surface p-5 text-center text-sm text-muted">
-        Les numéros de paiement ne sont pas encore renseignés. Contactez Janga Explorer pour vous abonner.
+        Les numéros de paiement ne sont pas encore renseignés. Contactez Janga Explorer pour payer.
       </p>
     );
   }
 
   return (
     <form action={action} className="space-y-4">
-      <Field label="Durée">
-        <select
-          name="months"
-          value={months}
-          onChange={(e) => setMonths(Number(e.target.value))}
-          className={inputClass}
-        >
-          {MONTH_CHOICES.map((m) => (
-            <option key={m} value={m}>
-              {m === 1 ? "1 mois" : `${m} mois`} · {formatAriary(m * monthlyPrice)}
-            </option>
-          ))}
-        </select>
-      </Field>
+      {offer ? (
+        <input type="hidden" name="offerId" value={offer.id} />
+      ) : (
+        <Field label="Durée">
+          <select
+            name="months"
+            value={months}
+            onChange={(e) => setMonths(Number(e.target.value))}
+            className={inputClass}
+          >
+            {MONTH_CHOICES.map((m) => (
+              <option key={m} value={m}>
+                {m === 1 ? "1 mois" : `${m} mois`} · {formatAriary(m * monthlyPrice)}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
 
       <fieldset className="space-y-1.5">
         <legend className="text-sm font-semibold">Moyen de paiement</legend>
@@ -74,7 +81,7 @@ export function PaymentForm({ monthlyPrice, accountName, numbers }: Props) {
       {selected && (
         <div className="rounded-xl bg-surface p-4 text-sm">
           <p>
-            Envoyez <strong>{formatAriary(months * monthlyPrice)}</strong> par {selected.label} au
+            Envoyez <strong>{formatAriary(amount)}</strong> par {selected.label} au
           </p>
           <p className="mt-1 text-xl font-extrabold tracking-wide">{numbers[selected.key]}</p>
           {accountName && <p className="text-muted">au nom de {accountName}</p>}

@@ -6,7 +6,7 @@ import { ChevronLeft, Search, SearchX } from "lucide-react";
 import { CATEGORY_STYLE } from "@/components/category";
 import { OfferRow } from "@/components/offer-card";
 import { formatAriary } from "@/lib/format";
-import { filterOffers, getActiveOffers } from "@/lib/offers";
+import { filterOffers, getActiveOffers, getToday } from "@/lib/offers";
 import { BUDGETS, CATEGORIES, isCategory, type OfferFilters } from "@/lib/types";
 
 export const metadata: Metadata = {
@@ -89,7 +89,8 @@ function Chip({ href, active, children }: { href: string; active: boolean; child
 
 async function Results({ searchParams }: { searchParams: Promise<Params> }) {
   const filters = parseFilters(await searchParams);
-  const offers = filterOffers(await getActiveOffers(), filters);
+  const [all, today] = await Promise.all([getActiveOffers(), getToday()]);
+  const offers = filterOffers(all, filters);
 
   return (
     <div className="space-y-3 pt-3">
@@ -175,7 +176,7 @@ async function Results({ searchParams }: { searchParams: Promise<Params> }) {
         <ul className="space-y-3 px-4 pb-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
           {offers.map((offer) => (
             <li key={offer.id}>
-              <OfferRow offer={offer} />
+              <OfferRow offer={offer} today={today} />
             </li>
           ))}
         </ul>

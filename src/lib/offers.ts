@@ -111,6 +111,35 @@ export async function getWeekendOffers() {
   );
 }
 
+/** Le bon plan du jour : une offre à la une (avec remise si possible), qui change chaque jour à minuit. */
+export function pickDealOfTheDay(offers: Offer[], today: string) {
+  const featured = offers.filter((o) => o.isFeatured);
+  const discounted = featured.filter((o) => discountPercent(o.priceOriginal, o.priceOffer) !== null);
+  const pool = (discounted.length ? discounted : featured.length ? featured : offers)
+    .slice()
+    .sort((a, b) => a.id.localeCompare(b.id));
+  if (pool.length === 0) return null;
+  const day = Math.floor(new Date(`${today}T12:00:00Z`).getTime() / 86_400_000);
+  return pool[day % pool.length];
+}
+
+export type PublicPricing = { monthlyPrice: number; dayPrice: number; trialDays: number };
+
+/** Tarifs de l'espace pro affichés au public (accueil, présentation pro). Null en mode démonstration. */
+export async function getPublicPricing(): Promise<PublicPricing | null> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("pricing");
+
+  const supabase = getSupabase();
+  if (!supabase) return null;
+  const { data } = await supabase
+    .from("subscription_settings")
+    .select("monthly_price, day_price, trial_days")
+    .maybeSingle<{ monthly_price: number; day_price: number; trial_days: number }>();
+  return data ? { monthlyPrice: data.monthly_price, dayPrice: data.day_price, trialDays: data.trial_days } : null;
+}
+
 export async function getOfferBySlug(slug: string) {
   const offers = await getActiveOffers();
   return offers.find((o) => o.slug === slug) ?? null;

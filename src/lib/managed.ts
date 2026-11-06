@@ -27,6 +27,8 @@ export type ManagedOffer = {
   location: string;
   mapUrl: string | null;
   validUntil: string;
+  /** Dernier jour de visibilité payé à la journée (offres publiées sans abonnement). */
+  passUntil: string | null;
   status: OfferStatus;
   rejectionReason: string | null;
   isVerified: boolean;
@@ -56,6 +58,7 @@ export type ManagedOfferRow = {
   location: string;
   map_url: string | null;
   valid_until: string;
+  pass_until: string | null;
   status: OfferStatus;
   rejection_reason: string | null;
   is_verified: boolean;
@@ -81,6 +84,7 @@ export function toManaged(row: ManagedOfferRow): ManagedOffer | null {
     location: row.location,
     mapUrl: row.map_url,
     validUntil: row.valid_until,
+    passUntil: row.pass_until,
     status: row.status,
     rejectionReason: row.rejection_reason,
     isVerified: row.is_verified,

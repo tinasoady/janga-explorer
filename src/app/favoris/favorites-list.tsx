@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Heart } from "lucide-react";
 import { OfferRow } from "@/components/offer-card";
 import { syncFavoritesWithAccount, useFavorites } from "@/lib/favorites";
+import { todayIso } from "@/lib/format";
 import type { Offer } from "@/lib/types";
 
 export function FavoritesList() {
@@ -45,6 +46,8 @@ export function FavoritesList() {
   // On retire immédiatement les offres dé-favorisées, sans attendre une nouvelle requête.
   const visible = offers.filter((o) => favorites.includes(o.slug));
   const expired = favorites.filter((slug) => !offers.some((o) => o.slug === slug)).length;
+  // Rendu uniquement dans le navigateur (les favoris y sont stockés) : la date locale est sûre ici.
+  const today = todayIso();
 
   if (visible.length === 0) {
     return (
@@ -64,7 +67,7 @@ export function FavoritesList() {
       <ul className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
         {visible.map((offer) => (
           <li key={offer.id}>
-            <OfferRow offer={offer} />
+            <OfferRow offer={offer} today={today} />
           </li>
         ))}
       </ul>

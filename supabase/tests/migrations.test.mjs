@@ -123,14 +123,70 @@ await db.exec(`update public.subscriptions set trial_ends_at = now() - interval 
 check("Q no longer active", (await one(Q, "select public.has_active_subscription() r"))?.r === false);
 const newOffQ = await as(Q, offerSql(bizQ, "menu-q2"));
 check("expired Q cannot create offer", !!newOffQ.error, newOffQ.error);
-const editQ = await as(Q, `update public.offers set title = 'Menu trio' where id = '${offQ}'`);
-check("expired Q cannot edit (resubmit) offer", !!editQ.error, editQ.error);
+const editQ = await as(Q, `update public.offers set title = 'Menu trio' where id = '${offQ}' returning status`);
+check("expired Q edit -> draft to pay", editQ.rows?.[0]?.status === "draft", editQ.error ?? JSON.stringify(editQ.rows));
 const archQ = await as(Q, `update public.offers set status = 'archived' where id = '${offQ}' returning status`);
 check("expired Q can archive offer", archQ.rows?.[0]?.status === "archived", archQ.error);
-const resubQ = await as(Q, `update public.offers set status = 'pending' where id = '${offQ}'`);
-check("expired Q cannot resubmit", !!resubQ.error, resubQ.error);
+const resubQ = await as(Q, `update public.offers set status = 'pending' where id = '${offQ}' returning status`);
+check("expired Q resubmit -> draft to pay", resubQ.rows?.[0]?.status === "draft", resubQ.error ?? JSON.stringify(resubQ.rows));
 const adminEdit = await as(A, `update public.offers set status = 'published' where id = '${offQ}' returning status`);
 check("admin can still publish Q offer", adminEdit.rows?.[0]?.status === "published", adminEdit.error);
+
+// Publication à la durée : Q, sans abonnement, paie les jours de visibilité d'une offre
+const draftSql = (b, slug) => offerSql(b, slug).replace("'pending')", "'draft')");
+const draftQ = await as(Q, draftSql(bizQ, "fete-q"));
+check("expired Q creates draft offer", !!draftQ.rows, draftQ.error);
+const draftId = draftQ.rows[0].id;
+const passHack = await as(Q, offerSql(bizQ, "fete-q2").replace("valid_until, status)", "valid_until, status, pass_until)").replace("'pending')", "'draft', current_date + 30)"));
+check("pro cannot set pass_until on insert", !!passHack.error, passHack.error);
+await as(Q, `update public.offers set pass_until = current_date + 30 where id = '${draftId}'`);
+check("pro cannot set pass_until on update", (await one(null, `select pass_until from public.offers where id = '${draftId}'`)).pass_until === null);
+
+const expectedDays = Number((await one(null, `select (current_date + 10) - (now() at time zone 'Indian/Antananarivo')::date + 1 d`)).d);
+const offerPay = await as(Q, `insert into public.subscription_payments (user_id, kind, offer_id, days, amount, method, payer_phone, reference, proof_path)
+  values ('${Q}', 'offer', '${draftId}', 1, 1, 'mvola', '0341234567', 'PASS-1', '${Q}/o.png') returning id, days, amount, status`);
+check("Q declares offer payment", !!offerPay.rows, offerPay.error);
+check("days and amount set by the base", offerPay.rows?.[0].days === expectedDays && offerPay.rows?.[0].amount === expectedDays * 1000, JSON.stringify(offerPay.rows?.[0]));
+const offerPayId = offerPay.rows[0].id;
+const dupOfferPay = await as(Q, `insert into public.subscription_payments (user_id, kind, offer_id, days, amount, method, payer_phone, reference, proof_path)
+  values ('${Q}', 'offer', '${draftId}', 1, 0, 'mvola', '0341234567', 'PASS-2', '${Q}/o2.png')`);
+check("second pending payment for same offer refused", !!dupOfferPay.error, dupOfferPay.error);
+const foreignPay = await as(P, `insert into public.subscription_payments (user_id, kind, offer_id, days, amount, method, payer_phone, reference, proof_path)
+  values ('${P}', 'offer', '${draftId}', 1, 0, 'mvola', '0341234567', 'PASS-P', '${P}/o.png')`);
+check("pro cannot pay for another pro's offer", !!foreignPay.error, foreignPay.error);
+
+check("admin confirms offer payment", (await one(A, `select public.review_subscription_payment('${offerPayId}', true) r`))?.r === "ok");
+const paidDraft = await one(null, `select status, pass_until = valid_until covered from public.offers where id = '${draftId}'`);
+check("paid draft goes to validation, days covered", paidDraft.status === "pending" && paidDraft.covered === true, JSON.stringify(paidDraft));
+const fixQ = await as(Q, `update public.offers set title = 'Grande fête' where id = '${draftId}' returning status`);
+check("covered offer edit stays pending", fixQ.rows?.[0]?.status === "pending", fixQ.error ?? JSON.stringify(fixQ.rows));
+const extendQ = await as(Q, `update public.offers set valid_until = valid_until + 5 where id = '${draftId}' returning status`);
+check("extending past paid days -> draft", extendQ.rows?.[0]?.status === "draft", extendQ.error ?? JSON.stringify(extendQ.rows));
+const extraPay = await as(Q, `insert into public.subscription_payments (user_id, kind, offer_id, days, amount, method, payer_phone, reference, proof_path)
+  values ('${Q}', 'offer', '${draftId}', 1, 0, 'mvola', '0341234567', 'PASS-3', '${Q}/o3.png') returning days`);
+check("extension pays only the extra days", extraPay.rows?.[0]?.days === 5, extraPay.error ?? JSON.stringify(extraPay.rows));
+
+// Statistiques : comptées pour les offres en ligne, lues par leur propriétaire
+async function asAnon(sql) {
+  await db.exec("set role anon;");
+  try {
+    return { rows: (await db.query(sql)).rows };
+  } catch (e) {
+    return { error: e.message };
+  } finally {
+    await db.exec("reset role;");
+  }
+}
+const trackView = await asAnon(`select public.track_offer_event('${offQ}', 'view')`);
+check("anon tracks a view", !trackView.error, trackView.error);
+await asAnon(`select public.track_offer_event('${offQ}', 'view')`);
+await asAnon(`select public.track_offer_event('${offQ}', 'whatsapp')`);
+await asAnon(`select public.track_offer_event('${offQ}', 'hack')`);
+await asAnon(`select public.track_offer_event('${draftId}', 'view')`);
+const statsQ = await as(Q, "select offer_id, views, whatsapp, calls from public.offer_stats");
+check("owner reads stats", statsQ.rows?.length === 1 && statsQ.rows[0].views === 2 && statsQ.rows[0].whatsapp === 1, JSON.stringify(statsQ.rows));
+check("other pro reads no stats", (await as(P, "select * from public.offer_stats")).rows?.length === 0);
+check("anon cannot write stats", !!(await asAnon(`insert into public.offer_stats (offer_id, day, views) values ('${offQ}', current_date + 1, 999)`)).error);
 
 // Paiement de Q après expiration : la période démarre à la confirmation
 const payQ = (await as(Q, `insert into public.subscription_payments (user_id, months, amount, method, payer_phone, reference, proof_path)

@@ -1,11 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState } from "react";
-import { ExternalLink, MapPin } from "lucide-react";
+import { useActionState, useState } from "react";
+import { ExternalLink, MapPin, Wallet } from "lucide-react";
 import { Field, FormMessage, inputClass, primaryButtonClass } from "@/components/form-ui";
 import { SubmitButton } from "@/components/submit-button";
+import { formatAriary } from "@/lib/format";
 import type { ManagedOffer } from "@/lib/managed";
+import { MAX_PASS_DAYS, passDaysDue } from "@/lib/subscription";
 import { CATEGORIES } from "@/lib/types";
 import { AdminOfferFields, type AdminOfferDefaults } from "../admin/offres/admin-offer-fields";
 import { saveOffer, type FormState } from "./actions";
@@ -17,9 +19,11 @@ type Props = {
   action?: (prev: FormState, formData: FormData) => Promise<FormState>;
   /** Présent uniquement sur les pages d'administration : ajoute le choix de l'établissement et du statut. */
   admin?: { businesses: { id: string; name: string }[]; defaults: AdminOfferDefaults };
+  /** Pro sans abonnement actif : il paiera les jours de visibilité de l'offre, estimés pendant la saisie. */
+  dayPass?: { dayPrice: number; today: string };
 };
 
-export function OfferForm({ offer, minDate, action: saveAction = saveOffer, admin }: Props) {
+export function OfferForm({ offer, minDate, action: saveAction = saveOffer, admin, dayPass }: Props) {
   const [state, action] = useActionState<FormState, FormData>(saveAction, null);
   const saved: Record<string, string> = {
     title: offer?.title ?? "",
@@ -33,6 +37,9 @@ export function OfferForm({ offer, minDate, action: saveAction = saveOffer, admi
     validUntil: offer?.validUntil ?? "",
   };
   const v = (name: string) => state?.values?.[name] ?? saved[name];
+  const [validUntil, setValidUntil] = useState(v("validUntil"));
+  const daysDue =
+    dayPass && validUntil ? passDaysDue({ validUntil, passUntil: offer?.passUntil ?? null }, dayPass.today) : 0;
 
   return (
     <form action={action} className="space-y-4">
@@ -137,8 +144,38 @@ export function OfferForm({ offer, minDate, action: saveAction = saveOffer, admi
       </div>
 
       <Field label="Dernier jour de validité">
-        <input name="validUntil" type="date" required min={minDate} defaultValue={v("validUntil")} className={inputClass} />
+        <input
+          name="validUntil"
+          type="date"
+          required
+          min={minDate}
+          defaultValue={v("validUntil")}
+          onChange={(e) => setValidUntil(e.target.value)}
+          className={inputClass}
+        />
       </Field>
+
+      {dayPass && daysDue > 0 && (
+        <p
+          className={`flex gap-2 rounded-xl px-3.5 py-2.5 text-sm ${
+            daysDue > MAX_PASS_DAYS ? "bg-amber-50 text-amber-900" : "bg-brand-soft text-ink"
+          }`}
+        >
+          <Wallet className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
+          {daysDue > MAX_PASS_DAYS ? (
+            <span>
+              Sans abonnement, la visibilité se paie pour {MAX_PASS_DAYS} jours au plus : choisissez une date plus
+              proche ou abonnez-vous.
+            </span>
+          ) : (
+            <span>
+              Visibilité : <strong>{daysDue} jour{daysDue > 1 ? "s" : ""}</strong> ×{" "}
+              {formatAriary(dayPass.dayPrice)} = <strong>{formatAriary(daysDue * dayPass.dayPrice)}</strong>, à payer
+              par Mobile Money à l&apos;étape suivante.
+            </span>
+          )}
+        </p>
+      )}
 
       <Field
         label="Photo"
@@ -167,7 +204,13 @@ export function OfferForm({ offer, minDate, action: saveAction = saveOffer, admi
 
       <FormMessage error={state?.error} />
       <SubmitButton className={primaryButtonClass}>
-        {offer ? "Enregistrer les modifications" : admin ? "Créer l'offre" : "Envoyer pour validation"}
+        {dayPass && daysDue > 0
+          ? "Continuer vers le paiement"
+          : offer
+            ? "Enregistrer les modifications"
+            : admin
+              ? "Créer l'offre"
+              : "Envoyer pour validation"}
       </SubmitButton>
     </form>
   );

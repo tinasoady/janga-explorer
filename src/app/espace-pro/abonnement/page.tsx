@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { Clock } from "lucide-react";
 import { BackButton } from "@/components/back-button";
@@ -10,6 +11,7 @@ import {
   getMySubscription,
   getSubscriptionSettings,
   PAYMENT_STATUS_LABEL,
+  paymentLabel,
   paymentMethodLabel,
   type PaymentRow,
 } from "@/lib/subscription";
@@ -57,7 +59,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/espace-pro/
     );
   }
 
-  const pending = payments.find((p) => p.status === "pending");
+  const pending = payments.find((p) => p.status === "pending" && p.kind === "subscription");
   const numbers = Object.fromEntries(Object.entries(settings.numbers).filter(([, n]) => n));
 
   return (
@@ -79,6 +81,19 @@ async function Content({ searchParams }: { searchParams: PageProps<"/espace-pro/
           <li>Payer pendant l&apos;essai ou avant l&apos;échéance ne fait rien perdre : la période s&apos;ajoute à la suite.</li>
         </ul>
       </section>
+
+      {subscription.status !== "canceled" && (
+        <section className="rounded-2xl border border-dashed border-line p-4">
+          <p className="text-sm text-muted">Sans abonnement : à la durée</p>
+          <p className="mt-1 text-xl font-extrabold">
+            {formatAriary(settings.dayPrice)} <span className="text-base font-semibold text-muted">/ jour et par offre</span>
+          </p>
+          <p className="mt-1 text-sm text-ink/80">
+            Pour un événement ou une promotion de quelques jours : publiez votre offre, puis payez seulement ses jours
+            de visibilité.
+          </p>
+        </section>
+      )}
 
       {subscription.status !== "canceled" && (
         <section className="space-y-3">
@@ -108,7 +123,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/espace-pro/
               <li key={p.id} className="space-y-1.5 rounded-2xl border border-line bg-white p-3 text-sm">
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-bold">
-                    {formatAriary(p.amount)} · {p.months} mois
+                    {formatAriary(p.amount)} · {paymentLabel(p)}
                   </p>
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${PAYMENT_TONE[p.status]}`}>
                     {PAYMENT_STATUS_LABEL[p.status]}
@@ -117,6 +132,17 @@ async function Content({ searchParams }: { searchParams: PageProps<"/espace-pro/
                 <p className="text-muted">
                   {paymentMethodLabel(p.method)} · réf. {p.reference} · déclaré le {formatShortDate(dateOf(p.created_at))}
                 </p>
+                {p.kind === "offer" && p.covers_until && (
+                  <p className="text-muted">
+                    {p.offer_id ? (
+                      <Link href={`/espace-pro/offres/${p.offer_id}/visibilite`} className="font-semibold text-brand">
+                        Offre visible jusqu&apos;au {formatShortDate(p.covers_until)}
+                      </Link>
+                    ) : (
+                      "Offre supprimée depuis"
+                    )}
+                  </p>
+                )}
                 {p.status === "confirmed" && p.period_start && p.period_end && (
                   <p className="text-muted">
                     Période : du {formatShortDate(dateOf(p.period_start))} au {formatShortDate(dateOf(p.period_end))}

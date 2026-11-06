@@ -133,13 +133,31 @@ Un compte = un établissement. Les photos sont stockées dans le bucket public `
    `/admin`), contrôle la réception sur le relevé de l'opérateur, puis confirme ou refuse avec un motif. Chaque mois
    payé ajoute 30 jours à la suite de l'accès en cours (rien n'est perdu en payant pendant l'essai ou avant
    l'échéance).
-4. **Sans abonnement actif**, le pro ne peut plus créer d'offre ni renvoyer une offre en validation (règle RLS et
-   trigger `offers_guard`, pas seulement l'interface). Ses offres déjà en ligne restent visibles jusqu'à leur date de
-   fin, et il peut toujours les retirer.
+4. **Sans abonnement actif**, le pro publie à la durée (voir plus bas) : une offre qu'il crée, modifie ou renvoie
+   reste un brouillon tant que ses jours de visibilité ne sont pas payés (règle RLS et trigger `offers_guard`, pas
+   seulement l'interface). Ses offres déjà en ligne restent visibles jusqu'à leur date de fin, et il peut toujours les
+   retirer. Un abonnement annulé par le superadmin bloque les deux formules.
+
+### Publication à la durée (sans abonnement)
+
+Pour un événement ou une promotion de quelques jours, le pro paie seulement les jours où l'offre est visible : du jour
+où il déclare le paiement jusqu'à la date de fin de l'offre, au prix par jour fixé par le superadmin (1 000 Ar par
+défaut, 90 jours au plus en une fois). Le formulaire d'offre affiche le montant pendant la saisie, puis envoie vers
+`/espace-pro/offres/[id]/visibilite` pour payer. Le paiement suit le même circuit que l'abonnement (preuve, puis
+confirmation par un admin, dans la même file de `/admin/abonnements`). À la confirmation, les jours payés sont notés sur
+l'offre (`pass_until`) et le brouillon passe dans la file de validation des offres. Si le pro repousse ensuite la date
+de fin, l'offre redevient un brouillon et seuls les jours en plus sont à payer.
+
+### Statistiques des offres
+
+Chaque vue de fiche (une fois par onglet) et chaque clic sur WhatsApp, Appeler ou Voir la localisation est compté par
+jour dans `offer_stats`, via `POST /api/stats` et la fonction `track_offer_event` (seules les offres en ligne comptent).
+Le pro voit les totaux des 30 derniers jours dans son espace. Les chiffres sont indicatifs : rien n'empêche un visiteur
+de gonfler un compteur en rechargeant la page dans un nouvel onglet.
 
 Le dashboard `/admin/abonnements` affiche les revenus confirmés (mois en cours et 6 derniers mois), les abonnés, les
 essais, les comptes qui expirent sous 7 jours (avec un bouton de relance WhatsApp) et l'historique des paiements.
-**Le superadmin** y règle en plus le prix mensuel, la durée de l'essai et les numéros de réception
+**Le superadmin** y règle en plus le prix mensuel, le prix par jour, la durée de l'essai et les numéros de réception
 (`/admin/abonnements/tarifs`), offre des jours, annule ou réactive un abonnement.
 
 **À faire après la migration** : renseigner le prix (20 000 Ar par défaut) et au moins un numéro de réception dans
@@ -207,6 +225,8 @@ supabase/           migrations SQL (schéma, règles d'accès RLS), tests SQL et
 - [x] Back-office : validation des offres (badge « Offre vérifiée »)
 - [x] Compte utilisateur, favoris synchronisés et alertes dans l'application
 - [x] Abonnement des comptes pro (Mobile Money, paiements confirmés par un admin)
+- [x] Publication à la durée sans abonnement, statistiques des offres pour les pros
+- [x] Accueil : bon plan du jour, « Dernière chance », repères « Nouveau » / « Dernier jour »
 - [ ] Paiement Mobile Money confirmé automatiquement (API MVola / Orange Money)
 - [ ] Notifications des alertes (e-mail ou WhatsApp)
 - [ ] Plusieurs établissements par compte

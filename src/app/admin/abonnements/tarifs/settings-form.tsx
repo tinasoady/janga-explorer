@@ -25,6 +25,19 @@ export function SettingsForm({ settings }: { settings: SubscriptionSettings }) {
             className={inputClass}
           />
         </Field>
+        <Field label="Prix par jour et par offre (Ar)" hint="Pour publier sans abonnement, à la durée.">
+          <input
+            name="dayPrice"
+            type="number"
+            inputMode="numeric"
+            required
+            min={0}
+            max={1000000}
+            step={100}
+            defaultValue={settings.dayPrice}
+            className={inputClass}
+          />
+        </Field>
         <Field label="Essai gratuit (jours)" hint="Pour les comptes approuvés ensuite.">
           <input
             name="trialDays"

@@ -1,20 +1,33 @@
 import Image from "next/image";
 import Link from "next/link";
 import Form from "next/form";
-import { ArrowRight, MapPin, Search, Store } from "lucide-react";
+import { ArrowRight, BadgeCheck, MapPin, MessageCircle, Search, Store, Wallet } from "lucide-react";
 import { CATEGORY_STYLE } from "@/components/category";
+import { DealOfTheDay } from "@/components/deal-of-the-day";
 import { Logo } from "@/components/logo";
 import { OfferCard } from "@/components/offer-card";
 import { SectionTitle } from "@/components/section-title";
-import { getActiveOffers, getWeekendOffers } from "@/lib/offers";
+import { formatAriary } from "@/lib/format";
+import { isLastChance } from "@/lib/highlight";
+import { getActiveOffers, getPublicPricing, getToday, getWeekendOffers, pickDealOfTheDay } from "@/lib/offers";
 import { CATEGORIES, type Offer } from "@/lib/types";
 
 const HERO_IMAGE =
   "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=2400&q=80&auto=format&fit=crop";
 
 export default async function HomePage() {
-  const [offers, weekend] = await Promise.all([getActiveOffers(), getWeekendOffers()]);
-  const featured = offers.filter((o) => o.isFeatured);
+  const [offers, weekend, today, pricing] = await Promise.all([
+    getActiveOffers(),
+    getWeekendOffers(),
+    getToday(),
+    getPublicPricing(),
+  ]);
+  const deal = pickDealOfTheDay(offers, today);
+  // Le bon plan du jour a sa propre carte : on ne le répète pas juste en dessous.
+  const featured = offers.filter((o) => o.isFeatured && o.id !== deal?.id);
+  const lastChance = offers
+    .filter((o) => isLastChance(o, today))
+    .sort((a, b) => a.validUntil.localeCompare(b.validUntil));
 
   return (
     <>
@@ -53,6 +66,12 @@ export default async function HomePage() {
           <p className="mt-2 max-w-[13rem] text-[15px] leading-snug font-semibold text-white drop-shadow md:mt-4 md:max-w-xl md:text-xl md:text-balance lg:text-2xl">
             Des bons plans pour tous vos moments !
           </p>
+          {offers.length > 0 && (
+            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm md:mt-5 md:text-sm">
+              <span className="size-2 animate-pulse rounded-full bg-sun" aria-hidden />
+              {offers.length} bon{offers.length > 1 ? "s" : ""} plan{offers.length > 1 ? "s" : ""} en ce moment
+            </p>
+          )}
           <Form action="/bons-plans" className="mt-6 md:hidden">
             <label className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 shadow-lg">
               <Search className="size-5 text-muted" aria-hidden />
@@ -104,8 +123,19 @@ export default async function HomePage() {
         })}
       </nav>
 
-      <Carousel title="Les bons plans du moment" href="/bons-plans" offers={featured} />
-      <Carousel title="Ce week-end à Mahajanga" href="/bons-plans" offers={weekend} />
+      <ul className="no-scrollbar mt-5 flex gap-2 overflow-x-auto px-4 text-xs font-semibold md:mt-8 md:justify-center md:gap-8 md:text-sm">
+        {PROMISES.map(({ icon: Icon, text }) => (
+          <li key={text} className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3 py-1.5 shadow-sm md:bg-transparent md:shadow-none">
+            <Icon className="size-4 text-verified" aria-hidden />
+            {text}
+          </li>
+        ))}
+      </ul>
+
+      {deal && <DealOfTheDay offer={deal} today={today} />}
+      <Carousel title="Les bons plans du moment" href="/bons-plans" offers={featured} today={today} />
+      <Carousel title="Dernière chance" href="/bons-plans?sort=fin" offers={lastChance} today={today} />
+      <Carousel title="Ce week-end à Mahajanga" href="/bons-plans" offers={weekend} today={today} />
 
       <section className="mx-4 mt-8 rounded-3xl bg-brand-soft p-5 md:flex md:items-center md:justify-between md:gap-8 md:p-8 lg:mt-12">
         <div>
@@ -113,6 +143,13 @@ export default async function HomePage() {
           <p className="mt-1 text-sm text-ink/80 md:text-base">
             Publiez vos offres sur Janga Explorer et touchez les habitants et visiteurs de Mahajanga.
           </p>
+          {pricing && (
+            <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-ink md:text-base">
+              <Wallet className="size-4 shrink-0 text-brand" aria-hidden />
+              Un événement de quelques jours ? Publiez-le pour {formatAriary(pricing.dayPrice)} par jour, sans
+              abonnement.
+            </p>
+          )}
         </div>
         <Link
           href="/pro"
@@ -126,7 +163,13 @@ export default async function HomePage() {
   );
 }
 
-function Carousel({ title, href, offers }: { title: string; href: string; offers: Offer[] }) {
+const PROMISES = [
+  { icon: BadgeCheck, text: "Chaque offre relue avant publication" },
+  { icon: MessageCircle, text: "Contact direct sur WhatsApp" },
+  { icon: Wallet, text: "Aucun frais pour vous" },
+];
+
+function Carousel({ title, href, offers, today }: { title: string; href: string; offers: Offer[]; today: string }) {
   if (offers.length === 0) return null;
   return (
     <section className="pt-7 md:pt-12">
@@ -140,7 +183,7 @@ function Carousel({ title, href, offers }: { title: string; href: string; offers
       {/* Téléphone : carrousel qu'on fait défiler. Tablette et ordinateur : grille, tout est visible d'un coup d'œil. */}
       <div className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-2 md:grid md:snap-none md:grid-cols-3 md:gap-5 md:overflow-visible md:[&>*:nth-child(n+7)]:hidden lg:grid-cols-4 lg:[&>*:nth-child(n+5)]:hidden">
         {offers.map((offer) => (
-          <OfferCard key={offer.id} offer={offer} />
+          <OfferCard key={offer.id} offer={offer} today={today} />
         ))}
       </div>
     </section>

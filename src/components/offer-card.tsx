@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CalendarDays, MapPin, ShieldCheck } from "lucide-react";
+import { CalendarDays, Clock, Flame, MapPin, ShieldCheck, Sparkles } from "lucide-react";
 import { discountPercent, formatAriary, formatShortDate } from "@/lib/format";
+import { offerHighlight, type HighlightTone } from "@/lib/highlight";
 import type { Offer } from "@/lib/types";
 import { CategoryIcon } from "./category";
 import { FavoriteButton } from "./favorite-button";
@@ -44,6 +45,27 @@ export function VerifiedBadge({ className = "" }: { className?: string }) {
   );
 }
 
+const HIGHLIGHT_STYLE: Record<HighlightTone, { className: string; icon: typeof Flame }> = {
+  urgent: { className: "bg-red-600 text-white", icon: Flame },
+  soon: { className: "bg-sun text-ink", icon: Clock },
+  new: { className: "bg-sea text-white", icon: Sparkles },
+};
+
+/** « Dernier jour », « Plus que 3 jours », « Nouveau »… Rien si l'offre n'a rien de pressant ni de neuf. */
+export function HighlightBadge({ offer, today, className = "" }: { offer: Offer; today: string; className?: string }) {
+  const highlight = offerHighlight(offer, today);
+  if (!highlight) return null;
+  const { className: colors, icon: Icon } = HIGHLIGHT_STYLE[highlight.tone];
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold shadow-sm ${colors} ${className}`}
+    >
+      <Icon className="size-3" aria-hidden />
+      {highlight.label}
+    </span>
+  );
+}
+
 function Prices({ offer }: { offer: Offer }) {
   return (
     <p className="flex flex-wrap items-baseline gap-x-2">
@@ -55,8 +77,8 @@ function Prices({ offer }: { offer: Offer }) {
   );
 }
 
-/** Carte verticale, utilisée dans les carrousels de l'accueil. */
-export function OfferCard({ offer }: { offer: Offer }) {
+/** Carte verticale, utilisée dans les carrousels de l'accueil. `today` active les repères d'urgence et de nouveauté. */
+export function OfferCard({ offer, today }: { offer: Offer; today?: string }) {
   return (
     <article className="relative w-60 shrink-0 snap-start overflow-hidden rounded-2xl border border-line bg-white shadow-sm transition md:w-auto md:hover:-translate-y-0.5 md:hover:shadow-md">
       <div className="relative aspect-[4/3]">
@@ -69,6 +91,7 @@ export function OfferCard({ offer }: { offer: Offer }) {
         />
         <DiscountBadge offer={offer} className="absolute top-2 left-2" />
         {offer.isVerified && <VerifiedBadge className="absolute top-2 right-2" />}
+        {today && <HighlightBadge offer={offer} today={today} className="absolute bottom-2 left-2" />}
       </div>
       <div className="space-y-1.5 p-3">
         <h3 className="line-clamp-1 font-bold">
@@ -91,7 +114,7 @@ export function OfferCard({ offer }: { offer: Offer }) {
 }
 
 /** Ligne horizontale, utilisée dans les listes (bons plans, favoris). */
-export function OfferRow({ offer }: { offer: Offer }) {
+export function OfferRow({ offer, today }: { offer: Offer; today?: string }) {
   return (
     <article className="relative flex gap-3 rounded-2xl border border-line bg-white p-2 shadow-sm">
       <div className="relative w-28 shrink-0 overflow-hidden rounded-xl min-[360px]:w-32">
@@ -100,6 +123,7 @@ export function OfferRow({ offer }: { offer: Offer }) {
         {offer.isVerified && <VerifiedBadge className="absolute bottom-1.5 left-1.5" />}
       </div>
       <div className="flex min-h-32 min-w-0 flex-1 flex-col gap-1 py-1 pr-7">
+        {today && <HighlightBadge offer={offer} today={today} className="self-start" />}
         <h3 className="line-clamp-2 text-[15px] leading-snug font-bold">
           <Link href={`/offres/${offer.slug}`} className="after:absolute after:inset-0">
             {offer.title}
