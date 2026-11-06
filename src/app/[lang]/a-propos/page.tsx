@@ -284,7 +284,7 @@ export default async function AProposPage() {
       <div className="space-y-12 px-4 pt-10 pb-6 md:space-y-16 md:pt-14">
         <section id="tout-trouver" className="scroll-mt-20">
           <SectionTitle>{t.allTitle}</SectionTitle>
-          <p className="mt-3 max-w-3xl text-sm text-ink/80 md:text-base">{t.allText}</p>
+          <p className="mt-3 max-w-3xl text-sm text-fg/80 md:text-base">{t.allText}</p>
           <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
             {CATEGORIES.map((c) => {
               const { icon: Icon, bg } = CATEGORY_STYLE[c.key];
@@ -315,12 +315,12 @@ export default async function AProposPage() {
               const Icon = REASON_ICONS[i];
               return (
                 <li key={title} className="flex gap-4 rounded-2xl bg-surface p-5">
-                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white text-sea shadow-sm">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-card text-sea shadow-sm">
                     <Icon className="size-5" aria-hidden />
                   </span>
                   <div>
                     <h3 className="font-bold">{title}</h3>
-                    <p className="mt-1 text-sm text-ink/75">{text}</p>
+                    <p className="mt-1 text-sm text-fg/75">{text}</p>
                   </div>
                 </li>
               );
@@ -339,7 +339,7 @@ export default async function AProposPage() {
                     <Icon className="size-6" aria-hidden />
                   </span>
                   <h3 className="mt-3 text-lg font-extrabold">{title}</h3>
-                  <ul className="mt-2 flex-1 space-y-2 text-sm text-ink/80">
+                  <ul className="mt-2 flex-1 space-y-2 text-sm text-fg/80">
                     {points.map((p) => (
                       <li key={p} className="flex gap-2">
                         <span className="mt-2 size-1.5 shrink-0 rounded-full bg-brand" aria-hidden />
@@ -386,7 +386,7 @@ export default async function AProposPage() {
         <section className="rounded-3xl bg-brand-soft p-6 md:flex md:items-center md:justify-between md:gap-8 md:p-10">
           <div>
             <h2 className="text-lg font-extrabold md:text-2xl">{t.questionTitle}</h2>
-            <p className="mt-1 text-sm text-ink/80 md:text-base">{t.questionText}</p>
+            <p className="mt-1 text-sm text-fg/80 md:text-base">{t.questionText}</p>
           </div>
           <div className="mt-4 flex flex-col gap-2 sm:flex-row md:mt-0 md:shrink-0">
             {contact && (
@@ -402,7 +402,7 @@ export default async function AProposPage() {
             )}
             <Link
               href="/bons-plans"
-              className="flex items-center justify-center gap-2 rounded-full border border-brand bg-white px-5 py-3 text-sm font-bold text-brand"
+              className="flex items-center justify-center gap-2 rounded-full border border-brand bg-card px-5 py-3 text-sm font-bold text-brand"
             >
               {t.seeDeals}
               <ArrowRight className="size-4" aria-hidden />
@@ -411,13 +411,13 @@ export default async function AProposPage() {
         </section>
 
         <nav aria-label={t.legal} className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-muted">
-          <Link href="/confidentialite" className="hover:text-ink">
+          <Link href="/confidentialite" className="hover:text-fg">
             {t.privacy}
           </Link>
-          <Link href="/cookies" className="hover:text-ink">
+          <Link href="/cookies" className="hover:text-fg">
             {t.cookies}
           </Link>
-          <Link href="/conditions" className="hover:text-ink">
+          <Link href="/conditions" className="hover:text-fg">
             {t.terms}
           </Link>
         </nav>

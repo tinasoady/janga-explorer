@@ -98,7 +98,7 @@ export function PaymentForm({ monthlyPrice, offer, accountName, numbers }: Props
             <label
               key={m.key}
               className={`cursor-pointer rounded-xl border px-2 py-2.5 text-center text-sm font-semibold ${
-                method === m.key ? "border-brand bg-brand-soft text-brand" : "border-line bg-white"
+                method === m.key ? "border-brand bg-brand-soft text-brand" : "border-line bg-card"
               }`}
             >
               <input

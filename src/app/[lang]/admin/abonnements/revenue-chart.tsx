@@ -32,7 +32,7 @@ export function RevenueChart({ months, locale }: { months: RevenueMonth[]; local
   const current = months.at(-1);
 
   return (
-    <figure className="rounded-2xl border border-line bg-white p-4">
+    <figure className="rounded-2xl border border-line bg-card p-4">
       <figcaption className="text-sm font-bold">{t.caption}</figcaption>
 
       <div className="mt-8 flex h-36 items-end gap-2 border-b border-line" aria-hidden>
@@ -49,7 +49,7 @@ export function RevenueChart({ months, locale }: { months: RevenueMonth[]; local
               />
               {isCurrent && m.amount > 0 && (
                 <span
-                  className="absolute text-[11px] font-bold whitespace-nowrap text-ink group-hover:invisible"
+                  className="absolute text-[11px] font-bold whitespace-nowrap text-fg group-hover:invisible"
                   style={{ bottom: `calc(${pct}% + 4px)` }}
                 >
                   {formatAriary(m.amount, locale)}

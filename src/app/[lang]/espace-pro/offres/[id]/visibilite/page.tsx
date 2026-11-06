@@ -139,7 +139,7 @@ async function Content({ params, searchParams }: Props) {
         <FormMessage info={t.sent} />
       )}
 
-      <section className="flex gap-3 rounded-2xl border border-line bg-white p-3 shadow-sm">
+      <section className="flex gap-3 rounded-2xl border border-line bg-card p-3 shadow-sm">
         <div className="relative size-20 shrink-0 overflow-hidden rounded-xl">
           <Image src={offer.imageUrl} alt="" fill sizes="80px" className="object-cover" />
         </div>
@@ -194,7 +194,7 @@ async function Content({ params, searchParams }: Props) {
           <section className="rounded-2xl border border-line p-4">
             <p className="text-sm text-muted">{t.visibility}</p>
             <p className="mt-1 text-2xl font-extrabold">{formatAriary(amount, locale)}</p>
-            <p className="text-sm text-ink/80">
+            <p className="text-sm text-fg/80">
               {t.breakdown(
                 days,
                 formatAriary(settings.dayPrice, locale),
@@ -210,7 +210,7 @@ async function Content({ params, searchParams }: Props) {
               <Sparkles className="mt-0.5 size-5 shrink-0 text-sea" aria-hidden />
               <p>
                 {t.better(formatAriary(settings.monthlyPrice, locale))}{" "}
-                <Link href="/espace-pro/abonnement" className="font-bold text-sea-dark">
+                <Link href="/espace-pro/abonnement" className="font-bold text-sea-dark dark:text-sea">
                   {t.seeSubscription}
                 </Link>
               </p>

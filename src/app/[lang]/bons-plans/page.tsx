@@ -64,7 +64,7 @@ export default async function BonsPlansPage({ searchParams }: PageProps<"/[lang]
   return (
     <>
       {/* Collé en haut sur téléphone ; sur tablette et ordinateur, l'en-tête du site l'est déjà. */}
-      <header className="sticky top-0 z-20 flex items-center gap-2 border-b border-line bg-white/95 px-2 py-3 backdrop-blur md:static md:border-0 md:bg-transparent md:px-4 md:pt-6 md:pb-0 md:backdrop-blur-none">
+      <header className="sticky top-0 z-20 flex items-center gap-2 border-b border-line bg-card/95 px-2 py-3 backdrop-blur md:static md:border-0 md:bg-transparent md:px-4 md:pt-6 md:pb-0 md:backdrop-blur-none">
         <Link
           href="/"
           aria-label={t.back}
@@ -117,7 +117,7 @@ function Chip({ href, active, children }: { href: string; active: boolean; child
       scroll={false}
       aria-current={active ? "true" : undefined}
       className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition ${
-        active ? "border-brand bg-brand text-white shadow-sm" : "border-line bg-white text-ink"
+        active ? "border-brand bg-brand text-white shadow-sm" : "border-line bg-card text-fg"
       }`}
     >
       {children}
@@ -176,7 +176,7 @@ async function Results({ searchParams }: { searchParams: Promise<Params> }) {
               href={hrefWith(filters, { maxPrice: max })}
               scroll={false}
               className={`shrink-0 rounded-full px-2.5 py-1 font-semibold ${
-                active ? "bg-ink text-white" : "bg-surface text-ink"
+                active ? "bg-fg text-card" : "bg-surface text-fg"
               }`}
             >
               {max ? `≤ ${formatAriary(max, locale)}` : t.anyBudget}
@@ -192,7 +192,7 @@ async function Results({ searchParams }: { searchParams: Promise<Params> }) {
             <>
               {" "}
               {t.forQuery} {t.quotes[0]}
-              <span className="font-semibold text-ink">{filters.q}</span>
+              <span className="font-semibold text-fg">{filters.q}</span>
               {t.quotes[1]}
             </>
           )}

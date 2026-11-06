@@ -6,7 +6,8 @@ import { getLocale } from "@/lib/locale";
  * couchant sur la mer. `dark` passe l'épingle et le baobab en blanc pour les fonds bleu nuit.
  */
 export function LogoMark({ className = "size-9", variant = "light" }: { className?: string; variant?: "light" | "dark" }) {
-  const pin = variant === "dark" ? "#fff" : "#0e2a47";
+  // Couleur du texte principal : bleu nuit le jour, claire en mode nuit.
+  const pin = variant === "dark" ? "#fff" : "var(--color-fg)";
   return (
     <svg viewBox="0 0 100 100" className={className} aria-hidden>
       <path d="M17 40A33 33 0 0 1 83 40C83 60 63 75 50 96 37 75 17 60 17 40Z" fill={pin} />
@@ -36,7 +37,7 @@ export async function Logo({ size = "md" }: { size?: keyof typeof SIZES }) {
   return (
     <Link href="/" className="flex shrink-0 items-center gap-2" aria-label={label}>
       <LogoMark className={SIZES[size].mark} />
-      <span className={`${SIZES[size].text} font-extrabold tracking-tight whitespace-nowrap text-ink`}>
+      <span className={`${SIZES[size].text} font-extrabold tracking-tight whitespace-nowrap text-fg`}>
         Janga <span className="text-brand-dark">Explorer</span>
       </span>
     </Link>

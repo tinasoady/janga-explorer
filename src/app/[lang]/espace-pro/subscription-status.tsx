@@ -76,7 +76,7 @@ export async function SubscriptionStatus({
       <Icon className={`mt-0.5 size-6 shrink-0 ${icon}`} aria-hidden />
       <div className="min-w-0 flex-1 space-y-1">
         <p className="font-bold">{title}</p>
-        <p className="text-sm text-ink/80">{text}</p>
+        <p className="text-sm text-fg/80">{text}</p>
         {compact && s.status !== "canceled" && (
           <Link href="/espace-pro/abonnement" className="inline-block pt-1 text-sm font-bold text-brand">
             {s.status === "expired" ? t.renew : soon ? t.extend : t.manage}

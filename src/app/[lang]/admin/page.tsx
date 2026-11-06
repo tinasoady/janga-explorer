@@ -272,11 +272,11 @@ function SampleSection({
   return (
     <section className="space-y-3 rounded-2xl border border-dashed border-sun bg-sun/10 p-4">
       <h2 className="text-lg font-extrabold">{t.samples(items.length)}</h2>
-      <p className="text-sm text-ink/80">{t.samplesText}</p>
+      <p className="text-sm text-fg/80">{t.samplesText}</p>
 
       <details>
         <summary className="cursor-pointer text-sm font-semibold text-brand">{t.samplesList}</summary>
-        <ul className="mt-2 divide-y divide-line rounded-xl bg-white text-sm">
+        <ul className="mt-2 divide-y divide-line rounded-xl bg-card text-sm">
           {items.map(({ offer, business }) => (
             <li key={offer.id} className="flex items-center gap-3 px-3 py-2">
               <div className="min-w-0 flex-1">
@@ -320,7 +320,7 @@ function ModerationCard({ item: { offer, business }, t, locale }: { item: Modera
   const contactMessage = `Bonjour, c'est Janga Explorer. Nous souhaitons confirmer votre offre « ${offer.title} » (${formatAriary(offer.priceOffer)}, jusqu'au ${formatShortDate(offer.validUntil)}).`;
 
   return (
-    <article className="space-y-3 rounded-2xl border border-line bg-white p-3 shadow-sm">
+    <article className="space-y-3 rounded-2xl border border-line bg-card p-3 shadow-sm">
       <div className="flex gap-3">
         <div className="relative size-24 shrink-0 overflow-hidden rounded-xl">
           <Image src={offer.imageUrl} alt="" fill sizes="96px" className="object-cover" />

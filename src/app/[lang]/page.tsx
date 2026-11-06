@@ -5,6 +5,7 @@ import { ArrowRight, BadgeCheck, MapPin, MessageCircle, Search, Store, Wallet } 
 import { CATEGORY_STYLE } from "@/components/category";
 import { DealsOfTheDay } from "@/components/deal-of-the-day";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/logo";
 import { OfferCard } from "@/components/offer-card";
 import { SectionTitle } from "@/components/section-title";
@@ -82,17 +83,18 @@ export default async function HomePage() {
       <header className="flex items-center justify-between gap-2 px-4 pt-4 pb-3 md:hidden">
         <div>
           <Logo />
-          <p className="mt-0.5 flex items-center gap-1 pl-11 text-xs font-semibold text-ink/80">
+          <p className="mt-0.5 flex items-center gap-1 pl-11 text-xs font-semibold text-fg/80">
             <MapPin className="size-3.5 text-brand" aria-hidden />
             Mahajanga
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1">
+          <ThemeToggle className="size-8 max-[359px]:hidden" />
           <LanguageSwitcher className="[&>svg]:hidden" />
           <Link
             href="/pro"
             aria-label={t.proSpace}
-            className="flex shrink-0 items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-ink"
+            className="flex shrink-0 items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-fg"
           >
             <Store className="size-4" aria-hidden />
             {/* Sur les plus petits écrans, l'icône seule laisse la place au logo et au choix de la langue */}
@@ -123,7 +125,7 @@ export default async function HomePage() {
             </p>
           )}
           <Form action="/bons-plans" className="mt-6 md:hidden">
-            <label className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 shadow-lg">
+            <label className="flex items-center gap-2 rounded-2xl bg-card px-4 py-3 shadow-lg">
               <Search className="size-5 text-muted" aria-hidden />
               <span className="sr-only">{t.search}</span>
               <input
@@ -179,7 +181,7 @@ export default async function HomePage() {
         {t.promises.map((text, i) => {
           const Icon = PROMISE_ICONS[i];
           return (
-            <li key={text} className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3 py-1.5 shadow-sm md:bg-transparent md:shadow-none">
+            <li key={text} className="flex shrink-0 items-center gap-1.5 rounded-full bg-card px-3 py-1.5 shadow-sm md:bg-transparent md:shadow-none">
               <Icon className="size-4 text-verified" aria-hidden />
               {text}
             </li>
@@ -195,9 +197,9 @@ export default async function HomePage() {
       <section className="mx-4 mt-8 rounded-3xl bg-brand-soft p-5 md:flex md:items-center md:justify-between md:gap-8 md:p-8 lg:mt-12">
         <div>
           <h2 className="text-lg font-extrabold md:text-2xl">{t.proTitle}</h2>
-          <p className="mt-1 text-sm text-ink/80 md:text-base">{t.proText}</p>
+          <p className="mt-1 text-sm text-fg/80 md:text-base">{t.proText}</p>
           {pricing && (
-            <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-ink md:text-base">
+            <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-fg md:text-base">
               <Wallet className="size-4 shrink-0 text-brand" aria-hidden />
               {t.proDays(formatAriary(pricing.dayPrice, locale))}
             </p>

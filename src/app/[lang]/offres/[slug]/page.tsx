@@ -159,13 +159,13 @@ async function OfferDetails({ params }: { params: Promise<{ slug: string }> }) {
         <FavoriteButton slug={offer.slug} className="absolute top-3 right-3 size-10 shadow-sm" />
       </div>
 
-      <div className="relative -mt-6 space-y-5 rounded-t-3xl bg-white px-5 pt-6 pb-6 md:mt-0 md:rounded-none md:px-1 lg:px-0 lg:pt-0">
+      <div className="relative -mt-6 space-y-5 rounded-t-3xl bg-card px-5 pt-6 pb-6 md:mt-0 md:rounded-none md:px-1 lg:px-0 lg:pt-0">
         <header className="space-y-2">
           <h1 className="text-2xl leading-tight font-extrabold">{offer.title}</h1>
-          <p className="flex items-start gap-1.5 text-sm text-ink/80">
+          <p className="flex items-start gap-1.5 text-sm text-fg/80">
             <CategoryIcon category={offer.category} className="mt-0.5 size-4" />
             <span>
-              {offer.business.kind} · <span className="font-semibold text-ink">{offer.business.name}</span>
+              {offer.business.kind} · <span className="font-semibold text-fg">{offer.business.name}</span>
             </span>
             {offer.business.isSample && <SampleTag className="mt-0.5" />}
           </p>
@@ -230,10 +230,10 @@ async function OfferDetails({ params }: { params: Promise<{ slug: string }> }) {
           </div>
         </dl>
 
-        <p className="leading-relaxed text-ink/90">{offer.description}</p>
+        <p className="leading-relaxed text-fg/90">{offer.description}</p>
 
         {offer.business.isSample && (
-          <p className="flex gap-2 rounded-xl bg-sun/15 p-3 text-xs text-ink">
+          <p className="flex gap-2 rounded-xl bg-sun/15 p-3 text-xs text-fg">
             <Info className="size-4 shrink-0 text-sun" aria-hidden />
             {t.sampleNotice}
           </p>
@@ -259,7 +259,7 @@ async function OfferDetails({ params }: { params: Promise<{ slug: string }> }) {
             href={mapsLink(offer)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 rounded-full border border-sea/40 bg-sea/5 py-3 font-semibold text-sea-dark transition active:scale-[0.98]"
+            className="flex items-center justify-center gap-2 rounded-full border border-sea/40 bg-sea/5 py-3 font-semibold text-sea-dark dark:text-sea transition active:scale-[0.98]"
           >
             <MapPin className="size-5" aria-hidden />
             {t.map}

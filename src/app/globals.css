@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Mode nuit : classe .dark sur <html>, posée avant l'affichage par le script de src/lib/theme.ts. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-script: var(--font-pacifico), cursive;
@@ -8,7 +11,12 @@
   --color-brand: #ff6a3d;
   --color-brand-dark: #e5542a;
   --color-brand-soft: #fff0ea;
+  /* Bleu nuit de la marque : fonds sombres (pied de page, cartes du jour) et texte posé sur du jaune ou du blanc
+     au-dessus des photos. Il ne change pas en mode nuit. */
   --color-ink: #0e2a47;
+  /* Couleurs selon leur rôle, redéfinies en mode nuit : texte principal et fond des cartes et des pages. */
+  --color-fg: #0e2a47;
+  --color-card: #ffffff;
   --color-muted: #64748b;
   --color-line: #e7ebf0;
   --color-surface: #f4f6f9;
@@ -29,7 +37,34 @@ html {
 
 body {
   background: var(--color-surface);
-  color: var(--color-ink);
+  color: var(--color-fg);
+}
+
+/* Mode nuit : mêmes noms de couleurs, autres valeurs. Les alertes (ambre, rouge) gardent leur sens avec des fonds
+   sombres et des textes clairs. */
+.dark {
+  color-scheme: dark;
+  --color-fg: #e6edf5;
+  --color-card: #111b26;
+  --color-surface: #1a2633;
+  --color-line: #2a3847;
+  --color-muted: #9aa9ba;
+  --color-brand-soft: #3a2018;
+  --color-ink: #0a1726;
+  --color-sea-dark: #0b7fc0;
+
+  --color-amber-50: #33270d;
+  --color-amber-100: #45330f;
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #fbbf24;
+  --color-amber-600: #fbbf24;
+  --color-amber-700: #fcd34d;
+  --color-amber-800: #fcd34d;
+  --color-amber-900: #fde68a;
+  --color-red-50: #3a1518;
+  --color-red-100: #4a1a1e;
+  --color-red-600: #f87171;
+  --color-red-700: #fca5a5;
 }
 
 /* Défilement horizontal sans barre visible (carrousels) */

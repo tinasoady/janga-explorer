@@ -165,7 +165,7 @@ export default async function ProPage() {
         <section>
           <h2 className="text-lg font-extrabold">{t.plansTitle}</h2>
           <div className="mt-3 grid gap-3 md:grid-cols-2">
-            <div className="rounded-2xl border-2 border-brand bg-white p-4">
+            <div className="rounded-2xl border-2 border-brand bg-card p-4">
               <p className="flex items-center gap-2 font-bold">
                 <Repeat className="size-5 text-brand" aria-hidden />
                 {t.monthly}
@@ -176,12 +176,12 @@ export default async function ProPage() {
                   <span className="text-sm font-semibold text-muted">{t.perMonth}</span>
                 </p>
               )}
-              <p className="mt-1 text-sm text-ink/80">
+              <p className="mt-1 text-sm text-fg/80">
                 {t.monthlyText}
                 {pricing && pricing.trialDays > 0 && t.trial(pricing.trialDays)}
               </p>
             </div>
-            <div className="rounded-2xl border border-line bg-white p-4">
+            <div className="rounded-2xl border border-line bg-card p-4">
               <p className="flex items-center gap-2 font-bold">
                 <CalendarRange className="size-5 text-sea" aria-hidden />
                 {t.daily}
@@ -192,7 +192,7 @@ export default async function ProPage() {
                   <span className="text-sm font-semibold text-muted">{t.perDay}</span>
                 </p>
               )}
-              <p className="mt-1 text-sm text-ink/80">{t.dailyText}</p>
+              <p className="mt-1 text-sm text-fg/80">{t.dailyText}</p>
             </div>
           </div>
         </section>

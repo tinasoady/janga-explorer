@@ -61,7 +61,7 @@ export async function LegalPage({
             href={p.href}
             aria-current={p.href === current ? "page" : undefined}
             className={`shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-semibold whitespace-nowrap ${
-              p.href === current ? "border-ink bg-ink text-white" : "border-line text-ink hover:bg-surface"
+              p.href === current ? "border-fg bg-fg text-card" : "border-line text-fg hover:bg-surface"
             }`}
           >
             {p.label}
@@ -69,7 +69,7 @@ export async function LegalPage({
         ))}
       </nav>
 
-      <div className="mt-6 px-4 text-[15px] leading-relaxed text-ink/85 [&_a]:font-semibold [&_a]:text-sea [&_a]:underline-offset-2 hover:[&_a]:underline [&_h2]:mt-8 [&_h2]:mb-2 [&_h2]:text-lg [&_h2]:font-extrabold [&_h2]:text-ink [&_li]:mt-1.5 [&_p]:mt-3 [&_strong]:text-ink [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-5">
+      <div className="mt-6 px-4 text-[15px] leading-relaxed text-fg/85 [&_a]:font-semibold [&_a]:text-sea [&_a]:underline-offset-2 hover:[&_a]:underline [&_h2]:mt-8 [&_h2]:mb-2 [&_h2]:text-lg [&_h2]:font-extrabold [&_h2]:text-fg [&_li]:mt-1.5 [&_p]:mt-3 [&_strong]:text-fg [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-5">
         <div className="rounded-2xl bg-surface p-4 text-sm [&>p:first-child]:mt-0">{intro}</div>
         {children}
       </div>

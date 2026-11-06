@@ -68,7 +68,7 @@ export async function ContactLinks({ tone = "dark" }: { tone?: "dark" | "light" 
   const button =
     tone === "dark"
       ? "bg-white/10 text-white hover:bg-sun hover:text-ink"
-      : "border border-line bg-white text-ink hover:border-brand hover:text-brand";
+      : "border border-line bg-card text-fg hover:border-brand hover:text-brand";
 
   return (
     <ul className="flex flex-wrap gap-2">

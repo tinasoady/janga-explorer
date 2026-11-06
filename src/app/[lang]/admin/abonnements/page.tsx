@@ -183,7 +183,7 @@ const T = messages({
 type Text = (typeof T)["fr"];
 
 const STATUS_TONE: Record<SubscriptionStatus, string> = {
-  trial: "bg-sea/10 text-sea-dark",
+  trial: "bg-sea/10 text-sea-dark dark:text-sea",
   active: "bg-verified/10 text-verified",
   expired: "bg-amber-100 text-amber-800",
   canceled: "bg-red-100 text-red-700",
@@ -334,7 +334,7 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/[lang]/ad
               href={f === "tous" ? "/admin/abonnements" : `/admin/abonnements?statut=${f}`}
               aria-current={filter === f ? "page" : undefined}
               className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold ${
-                filter === f ? "bg-ink text-white" : "border border-line bg-white text-ink"
+                filter === f ? "bg-fg text-card" : "border border-line bg-card text-fg"
               }`}
             >
               {t.filters[f]}
@@ -357,7 +357,7 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/[lang]/ad
       {reviewed.length > 0 && (
         <section>
           <h2 className="text-lg font-extrabold">{t.lastReviewed}</h2>
-          <ul className="mt-3 divide-y divide-line rounded-2xl border border-line bg-white text-sm">
+          <ul className="mt-3 divide-y divide-line rounded-2xl border border-line bg-card text-sm">
             {reviewed.map((p) => (
               <li key={p.id} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-4 py-2.5">
                 <span className="min-w-0 font-semibold">{byUser.get(p.user_id)?.company ?? t.deletedAccount}</span>
@@ -394,7 +394,7 @@ function Stat({
   accent?: boolean;
 }) {
   return (
-    <div className={`rounded-2xl border border-line bg-white p-4 ${hero ? "col-span-2 md:col-span-1" : ""}`}>
+    <div className={`rounded-2xl border border-line bg-card p-4 ${hero ? "col-span-2 md:col-span-1" : ""}`}>
       <p className="text-xs font-semibold text-muted">{label}</p>
       <p className={`mt-1 font-extrabold tabular-nums ${hero ? "text-3xl" : "text-2xl"} ${accent ? "text-brand" : ""}`}>
         {value}
@@ -440,7 +440,7 @@ function PaymentCard({
   const canceled = pro?.sub.status === "canceled";
 
   return (
-    <article className="space-y-3 rounded-2xl border border-line bg-white p-4 shadow-sm">
+    <article className="space-y-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
       <div className="flex gap-3">
         {proofUrl ? (
           <a
@@ -537,7 +537,7 @@ function ProCard({ pro: p, superadmin, t, locale }: { pro: Pro; superadmin: bool
       : `Bonjour, c'est Janga Explorer. Votre ${sub.status === "trial" ? "essai gratuit" : "abonnement"} se termine le ${untilFr}. Pour continuer à publier vos offres, abonnez-vous depuis votre espace pro (Mon abonnement).`;
 
   return (
-    <article className="space-y-3 rounded-2xl border border-line bg-white p-4 shadow-sm">
+    <article className="space-y-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="truncate font-bold">{p.company ?? p.email}</h3>
@@ -551,7 +551,7 @@ function ProCard({ pro: p, superadmin, t, locale }: { pro: Pro; superadmin: bool
         </span>
       </div>
 
-      <p className={`text-sm ${soon ? "font-semibold text-amber-700" : "text-ink/80"}`}>
+      <p className={`text-sm ${soon ? "font-semibold text-amber-700" : "text-fg/80"}`}>
         {sub.status === "canceled"
           ? t.canceledReason(sub.cancelReason)
           : sub.status === "expired"

@@ -162,7 +162,7 @@ function RequestCard({ request: r, t, locale }: { request: RequestRow; t: Text; 
   const reasonPlaceholder = r.status === "approved" ? t.withdrawReason : t.rejectReason;
 
   return (
-    <article className="space-y-3 rounded-2xl border border-line bg-white p-4 shadow-sm">
+    <article className="space-y-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
       <div>
         <h3 className="font-bold">{r.company}</h3>
         <p className="text-sm text-muted">

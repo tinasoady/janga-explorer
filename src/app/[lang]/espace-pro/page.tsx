@@ -245,12 +245,12 @@ async function Dashboard() {
 
       {offers.length > 0 && (
         <section aria-label={t.stats} className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-line bg-white p-4">
+          <div className="rounded-2xl border border-line bg-card p-4">
             <p className="text-xs font-semibold text-muted">{t.views}</p>
             <p className="mt-1 text-2xl font-extrabold tabular-nums">{total.views}</p>
             <p className="text-xs text-muted">{t.overDays(STATS_DAYS)}</p>
           </div>
-          <div className="rounded-2xl border border-line bg-white p-4">
+          <div className="rounded-2xl border border-line bg-card p-4">
             <p className="text-xs font-semibold text-muted">{t.contacts}</p>
             <p className="mt-1 text-2xl font-extrabold text-verified tabular-nums">{total.contacts}</p>
             <p className="text-xs text-muted">{t.contactsDetail(STATS_DAYS)}</p>
@@ -327,7 +327,7 @@ function RequestStatus({ request, t, locale }: { request: MyProRequest | null; t
       >
         <Icon className={`mx-auto size-10 ${rejected ? "text-red-600" : "text-amber-600"}`} aria-hidden />
         <p className="mt-3 font-bold">{rejected ? t.rejectedTitle : t.pendingTitle}</p>
-        <p className="mt-1 text-sm text-ink/80">{rejected ? request.rejectionReason : t.pendingText}</p>
+        <p className="mt-1 text-sm text-fg/80">{rejected ? request.rejectionReason : t.pendingText}</p>
       </div>
 
       <dl className="space-y-2 rounded-2xl border border-line p-4 text-sm">
@@ -380,7 +380,7 @@ function OfferItem({
   const canArchive = offer.status === "published" || offer.status === "pending";
 
   return (
-    <article className="space-y-3 rounded-2xl border border-line bg-white p-3 shadow-sm">
+    <article className="space-y-3 rounded-2xl border border-line bg-card p-3 shadow-sm">
       <div className="flex gap-3">
         <div className="relative size-20 shrink-0 overflow-hidden rounded-xl">
           <Image src={offer.imageUrl} alt="" fill sizes="80px" className="object-cover" />
@@ -408,7 +408,7 @@ function OfferItem({
       {hasStats && (
         <ul
           aria-label={t.statsLabel(STATS_DAYS)}
-          className="flex flex-wrap gap-x-4 gap-y-1 rounded-xl bg-surface px-3 py-2 text-xs text-ink/80"
+          className="flex flex-wrap gap-x-4 gap-y-1 rounded-xl bg-surface px-3 py-2 text-xs text-fg/80"
         >
           <StatItem icon={Eye} value={stats.views} label={t.statViews} />
           <StatItem icon={MessageCircle} value={stats.whatsapp} label="WhatsApp" />

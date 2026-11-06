@@ -206,7 +206,7 @@ export function OfferForm({ offer, minDate, action: saveAction = saveOffer, admi
               <label
                 key={mode}
                 className={`cursor-pointer rounded-xl border px-3 py-2.5 text-sm ${
-                  pricing === mode ? "border-brand bg-brand-soft text-brand" : "border-line bg-white"
+                  pricing === mode ? "border-brand bg-brand-soft text-brand" : "border-line bg-card"
                 }`}
               >
                 <input
@@ -285,7 +285,7 @@ export function OfferForm({ offer, minDate, action: saveAction = saveOffer, admi
         />
         <p className="text-xs text-muted">
           {t.mapHelp1}
-          <strong className="text-ink">{t.mapHelp2}</strong>
+          <strong className="text-fg">{t.mapHelp2}</strong>
           {t.mapHelp3}
         </p>
         <a
@@ -314,7 +314,7 @@ export function OfferForm({ offer, minDate, action: saveAction = saveOffer, admi
       {dayPass && daysDue > 0 && (
         <p
           className={`flex gap-2 rounded-xl px-3.5 py-2.5 text-sm ${
-            daysDue > MAX_PASS_DAYS ? "bg-amber-50 text-amber-900" : "bg-brand-soft text-ink"
+            daysDue > MAX_PASS_DAYS ? "bg-amber-50 text-amber-900" : "bg-brand-soft text-fg"
           }`}
         >
           <Wallet className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />

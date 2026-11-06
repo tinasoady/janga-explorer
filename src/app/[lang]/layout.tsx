@@ -9,6 +9,7 @@ import { SiteHeader } from "@/components/site-header";
 import { LOCALES, messages } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 import { isSupabaseConfigured } from "@/lib/supabase-server";
+import { THEME_SCRIPT } from "@/lib/theme";
 import "../globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -63,7 +64,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#ff6a3d",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ff6a3d" },
+    { media: "(prefers-color-scheme: dark)", color: "#111b26" },
+  ],
   // Nécessaire pour que env(safe-area-inset-*) soit renseigné : la barre du bas passe au-dessus de l'indicateur d'accueil de l'iPhone
   viewportFit: "cover",
 };
@@ -79,12 +83,21 @@ export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
   const demo = !isSupabaseConfigured();
 
   return (
-    <html lang={locale} className={`${jakarta.variable} ${pacifico.variable} ${oswald.variable} antialiased`}>
+    // suppressHydrationWarning : le script de <head> ajoute la classe .dark avant que React ne prenne la main.
+    <html
+      lang={locale}
+      suppressHydrationWarning
+      className={`${jakarta.variable} ${pacifico.variable} ${oswald.variable} antialiased`}
+    >
+      <head>
+        {/* Applique le mode jour / nuit avant l'affichage, pour éviter un flash de page claire. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="font-sans">
         <LocaleProvider locale={locale}>
           {/* overflow-x-clip : les bandeaux pleine largeur (100vw) ne doivent pas créer de défilement horizontal */}
           {/* Marges latérales : en paysage, l'encoche de l'iPhone ne doit pas masquer le contenu (viewport-fit=cover) */}
-          <div className="relative flex min-h-dvh flex-col overflow-x-clip bg-white pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+          <div className="relative flex min-h-dvh flex-col overflow-x-clip bg-card pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
             {demo && (
               <p className="bg-sun px-4 py-1.5 text-center text-xs font-bold text-ink">{DEMO_NOTICE[locale].text}</p>
             )}

@@ -159,7 +159,7 @@ export function Slider({
                 onClick={() => setPaused((p) => !p)}
                 aria-label={paused ? t.play : t.pause}
                 className={`ml-1 grid size-6 place-items-center rounded-full ${
-                  overlay ? "bg-white/80 text-ink" : "text-muted hover:text-ink"
+                  overlay ? "bg-white/80 text-ink" : "text-muted hover:text-fg"
                 }`}
               >
                 {paused ? <Play className="size-3.5" aria-hidden /> : <Pause className="size-3.5" aria-hidden />}

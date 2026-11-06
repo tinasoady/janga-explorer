@@ -33,7 +33,7 @@ export function MidnightCountdown({ className = "" }: { className?: string }) {
       <Timer className="size-4 text-brand" aria-hidden />
       <span>
         {locale === "en" ? "Changes in" : "Change dans"}{" "}
-        <span className="font-extrabold text-ink tabular-nums">
+        <span className="font-extrabold text-fg tabular-nums">
           {pad(h)}:{pad(m)}:{pad(s)}
         </span>
       </span>

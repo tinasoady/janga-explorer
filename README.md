@@ -205,6 +205,17 @@ avec `NEXT_PUBLIC_DEMO_MODE=1`. En local : `NEXT_PUBLIC_DEMO_MODE=1` dans `.env.
 
 Les photos viennent d'Unsplash. `supabase/seed.sql` ne reprend que les 13 premières offres.
 
+## Mode jour / nuit
+
+Bouton lune / soleil dans l'en-tête (et sur l'accueil mobile), choix Jour / Nuit / Auto dans le profil ; « Auto » suit le
+réglage de l'appareil. Le choix reste dans le navigateur (`localStorage`, clé `janga:theme`) et un petit script de
+`<head>` (`src/lib/theme.ts`) pose la classe `.dark` avant l'affichage, sans flash de page claire.
+
+Les couleurs sont nommées selon leur rôle dans `src/app/globals.css` et redéfinies sous `.dark` : `bg-card` (fond des
+pages et des cartes), `text-fg` (texte), `bg-surface`, `border-line`, `text-muted`… Pour un nouvel élément, utiliser ces
+noms plutôt que `bg-white` ou `text-ink`. `ink` reste le bleu nuit de la marque : fonds sombres (pied de page, cartes du
+jour) et texte posé sur du jaune ou sur les boutons blancs au-dessus des photos.
+
 ## Langues (français / anglais)
 
 Tout le site existe en français et en anglais, **à la même adresse** : le choix est gardé dans le cookie `lang`

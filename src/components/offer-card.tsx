@@ -129,7 +129,7 @@ function ValidUntil({ offer }: { offer: Offer }) {
 /** Carte verticale, utilisée dans les carrousels de l'accueil. `today` active les repères d'urgence et de nouveauté. */
 export function OfferCard({ offer, today }: { offer: Offer; today?: string }) {
   return (
-    <article className="relative w-60 shrink-0 snap-start overflow-hidden rounded-2xl border border-line bg-white shadow-sm transition md:w-auto md:hover:-translate-y-0.5 md:hover:shadow-md">
+    <article className="relative w-60 shrink-0 snap-start overflow-hidden rounded-2xl border border-line bg-card shadow-sm transition md:w-auto md:hover:-translate-y-0.5 md:hover:shadow-md">
       <div className="relative aspect-[4/3]">
         <Image
           src={offer.imageUrl}
@@ -148,7 +148,7 @@ export function OfferCard({ offer, today }: { offer: Offer; today?: string }) {
             {offer.title}
           </Link>
         </h3>
-        <p className="flex items-center gap-1.5 text-xs text-ink/80">
+        <p className="flex items-center gap-1.5 text-xs text-fg/80">
           <CategoryIcon category={offer.category} />
           <span className="line-clamp-1">{offer.business.name}</span>
           {offer.business.isSample && <SampleTag />}
@@ -163,7 +163,7 @@ export function OfferCard({ offer, today }: { offer: Offer; today?: string }) {
 /** Ligne horizontale, utilisée dans les listes (bons plans, favoris). */
 export function OfferRow({ offer, today }: { offer: Offer; today?: string }) {
   return (
-    <article className="relative flex gap-3 rounded-2xl border border-line bg-white p-2 shadow-sm">
+    <article className="relative flex gap-3 rounded-2xl border border-line bg-card p-2 shadow-sm">
       <div className="relative w-28 shrink-0 overflow-hidden rounded-xl min-[360px]:w-32">
         <Image src={offer.imageUrl} alt="" fill sizes="128px" className="object-cover" />
         <DiscountBadge offer={offer} size="sm" className="absolute top-1.5 left-1.5" />
@@ -176,7 +176,7 @@ export function OfferRow({ offer, today }: { offer: Offer; today?: string }) {
             {offer.title}
           </Link>
         </h3>
-        <p className="flex items-center gap-1.5 text-xs text-ink/80">
+        <p className="flex items-center gap-1.5 text-xs text-fg/80">
           <CategoryIcon category={offer.category} />
           <span className="truncate">{offer.business.name}</span>
           {offer.business.isSample && <SampleTag />}

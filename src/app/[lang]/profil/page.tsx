@@ -6,6 +6,7 @@ import { ContactLinks } from "@/components/contact-links";
 import { FavoritesSync } from "@/components/favorites-sync";
 import { InstallAppCard } from "@/components/install-app";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { ThemeChoices } from "@/components/theme-toggle";
 import { legalPages } from "@/components/legal-page";
 import { secondaryButtonClass } from "@/components/form-ui";
 import { LogoMark } from "@/components/logo";
@@ -116,8 +117,10 @@ export default async function ProfilPage() {
 
         <InstallAppCard />
 
+        <ThemeChoices />
+
         <section className="space-y-2 text-sm text-muted">
-          <p className="flex items-center gap-2 font-bold text-ink">
+          <p className="flex items-center gap-2 font-bold text-fg">
             <ShieldCheck className="size-5 text-verified" aria-hidden />
             {t.promiseTitle}
           </p>
@@ -131,7 +134,7 @@ export default async function ProfilPage() {
 
         <nav aria-label={t.legal} className="flex flex-wrap gap-x-4 gap-y-2 text-xs font-semibold text-muted">
           {legalPages(locale).map((p) => (
-            <Link key={p.href} href={p.href} className="hover:text-ink">
+            <Link key={p.href} href={p.href} className="hover:text-fg">
               {p.label}
             </Link>
           ))}

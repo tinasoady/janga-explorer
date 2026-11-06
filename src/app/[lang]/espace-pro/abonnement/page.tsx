@@ -142,7 +142,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/[lang]/espa
           {formatAriary(settings.monthlyPrice, locale)}{" "}
           <span className="text-base font-semibold text-muted">{t.perMonth}</span>
         </p>
-        <ul className="mt-2 space-y-1 text-sm text-ink/80">
+        <ul className="mt-2 space-y-1 text-sm text-fg/80">
           {t.perks.map((perk) => (
             <li key={perk}>{perk}</li>
           ))}
@@ -156,7 +156,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/[lang]/espa
             {formatAriary(settings.dayPrice, locale)}{" "}
             <span className="text-base font-semibold text-muted">{t.perDay}</span>
           </p>
-          <p className="mt-1 text-sm text-ink/80">{t.dailyText}</p>
+          <p className="mt-1 text-sm text-fg/80">{t.dailyText}</p>
         </section>
       )}
 
@@ -187,7 +187,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/[lang]/espa
           <h2 className="text-lg font-extrabold">{t.history}</h2>
           <ul className="mt-3 space-y-2">
             {payments.map((p) => (
-              <li key={p.id} className="space-y-1.5 rounded-2xl border border-line bg-white p-3 text-sm">
+              <li key={p.id} className="space-y-1.5 rounded-2xl border border-line bg-card p-3 text-sm">
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-bold">
                     {formatAriary(p.amount, locale)} · {paymentLabel(p, locale)}

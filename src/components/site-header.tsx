@@ -6,6 +6,7 @@ import { messages } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 import { CategoryBar, CategoryBarLinks } from "./header-nav";
 import { LanguageSwitcher } from "./language-switcher";
+import { ThemeToggle } from "./theme-toggle";
 import { Logo } from "./logo";
 
 const T = messages({
@@ -37,11 +38,11 @@ export async function SiteHeader() {
   const t = T[await getLocale()];
   return (
     <>
-      <header className="hidden bg-white md:block">
+      <header className="hidden bg-card md:block">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-8 py-4 lg:gap-8 lg:px-12 lg:py-5">
           <div>
             <Logo size="lg" />
-            <p className="flex items-center gap-1 pl-14 text-xs font-semibold text-ink/70">
+            <p className="flex items-center gap-1 pl-14 text-xs font-semibold text-fg/70">
               <MapPin className="size-3.5 text-brand" aria-hidden />
               Mahajanga
             </p>
@@ -54,18 +55,19 @@ export async function SiteHeader() {
                 name="q"
                 type="search"
                 placeholder={t.placeholder}
-                className="w-full min-w-0 bg-transparent text-[15px] outline-none placeholder:text-ink/60"
+                className="w-full min-w-0 bg-transparent text-[15px] outline-none placeholder:text-fg/60"
               />
-              <Search className="size-5 shrink-0 text-ink" aria-hidden />
+              <Search className="size-5 shrink-0 text-fg" aria-hidden />
             </label>
           </Form>
 
           <div className="ml-auto flex shrink-0 items-center gap-1 lg:gap-2">
+            <ThemeToggle />
             <LanguageSwitcher className="mr-1 lg:mr-2" />
             <Link
               href="/profil"
               aria-label={t.account}
-              className="flex items-center gap-2 rounded-md p-2 text-ink transition hover:text-sea"
+              className="flex items-center gap-2 rounded-md p-2 text-fg transition hover:text-sea"
             >
               <span className="grid size-8 place-items-center rounded-full border-2 border-current">
                 <User className="size-4" strokeWidth={2.4} aria-hidden />
@@ -76,7 +78,7 @@ export async function SiteHeader() {
             <Link
               href="/favoris"
               aria-label={t.favorites}
-              className="grid size-11 place-items-center rounded-md text-ink transition hover:text-brand"
+              className="grid size-11 place-items-center rounded-md text-fg transition hover:text-brand"
             >
               <Heart className="size-6" strokeWidth={2} aria-hidden />
             </Link>

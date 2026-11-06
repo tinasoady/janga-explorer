@@ -19,8 +19,8 @@ function switchTo(next: Locale) {
 export function LanguageSwitcher({ className = "", tone = "light" }: { className?: string; tone?: "light" | "dark" }) {
   const locale = useLocale();
 
-  const idle = tone === "dark" ? "text-white/70 hover:text-white" : "text-muted hover:text-ink";
-  const active = tone === "dark" ? "bg-white text-ink" : "bg-ink text-white";
+  const idle = tone === "dark" ? "text-white/70 hover:text-white" : "text-muted hover:text-fg";
+  const active = tone === "dark" ? "bg-white text-ink" : "bg-fg text-card";
 
   return (
     <div role="group" aria-label={LABEL[locale]} className={`flex items-center gap-1 text-xs font-bold ${className}`}>

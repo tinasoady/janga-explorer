@@ -142,7 +142,7 @@ function AlertCard({ alert, offers, locale }: { alert: AlertRow; offers: Offer[]
   if (alert.query) params.set("q", alert.query);
 
   return (
-    <article className="space-y-3 rounded-2xl border border-line bg-white p-4 shadow-sm">
+    <article className="space-y-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
       <p className="flex items-center gap-2 font-bold">
         <Bell className="size-5 shrink-0 text-sea" aria-hidden />
         {alertLabel(alert, locale)}

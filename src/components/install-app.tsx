@@ -132,7 +132,7 @@ export function InstallAppCard() {
             <Share className="size-4 shrink-0 text-sea" aria-hidden />
             <span>
               {t.share1}
-              <strong className="text-ink">{t.share2}</strong>
+              <strong className="text-fg">{t.share2}</strong>
               {t.share3}
             </span>
           </li>
@@ -140,7 +140,7 @@ export function InstallAppCard() {
             <SquarePlus className="size-4 shrink-0 text-sea" aria-hidden />
             <span>
               {t.add1}
-              <strong className="text-ink">{t.add2}</strong>
+              <strong className="text-fg">{t.add2}</strong>
               {t.add3}
             </span>
           </li>

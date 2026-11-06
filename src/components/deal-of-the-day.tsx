@@ -69,7 +69,7 @@ function DealCard({
   const savings = offer.priceOriginal ? offer.priceOriginal - offer.priceOffer : 0;
 
   return (
-    <article className="relative h-full overflow-hidden rounded-3xl bg-ink text-white shadow-lg transition md:grid md:grid-cols-2 md:hover:shadow-xl">
+    <article className="relative h-full overflow-hidden rounded-3xl bg-ink text-white shadow-lg ring-line transition dark:ring-1 md:grid md:grid-cols-2 md:hover:shadow-xl">
       <div className="relative aspect-[16/10] md:aspect-auto md:min-h-80">
         <Image
           src={offer.imageUrl}

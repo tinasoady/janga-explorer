@@ -138,7 +138,7 @@ export default async function CookiesPage() {
       {/* Tableau sur ordinateur ; sur téléphone, une carte par élément pour éviter le défilement horizontal. */}
       <div className="mt-4 hidden overflow-hidden rounded-2xl border border-line md:block">
         <table className="w-full text-left text-sm">
-          <thead className="bg-surface text-ink">
+          <thead className="bg-surface text-fg">
             <tr>
               <th className="p-3 font-bold">{t.headers.name}</th>
               <th className="p-3 font-bold">{t.headers.purpose}</th>
@@ -150,7 +150,7 @@ export default async function CookiesPage() {
             {t.storage.map((s) => (
               <tr key={s.name} className="align-top">
                 <td className="p-3">
-                  <code className="font-semibold text-ink">{s.name}</code>
+                  <code className="font-semibold text-fg">{s.name}</code>
                   <span className="block text-xs text-muted">{s.kind}</span>
                 </td>
                 <td className="p-3">{s.purpose}</td>
@@ -164,7 +164,7 @@ export default async function CookiesPage() {
       <ul className="mt-4 list-none! space-y-3 pl-0! md:hidden">
         {t.storage.map((s) => (
           <li key={s.name} className="rounded-2xl border border-line p-4 text-sm">
-            <code className="font-semibold text-ink">{s.name}</code>
+            <code className="font-semibold text-fg">{s.name}</code>
             <span className="ml-2 text-xs text-muted">{s.kind}</span>
             <p className="mt-2!">{s.purpose}</p>
             <p className="mt-1! text-muted">

@@ -90,7 +90,7 @@ export function AdminOfferFields({
       </Field>
 
       {choice === "new" && (
-        <div className="space-y-4 rounded-xl bg-white p-4">
+        <div className="space-y-4 rounded-xl bg-card p-4">
           <Field label={t.newName}>
             <input name="name" required maxLength={80} defaultValue={v("name")} className={inputClass} />
           </Field>

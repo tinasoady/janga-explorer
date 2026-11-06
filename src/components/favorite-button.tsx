@@ -21,9 +21,9 @@ export function FavoriteButton({ slug, className = "size-10" }: { slug: string; 
       aria-label={
         en ? (active ? "Remove from saved deals" : "Save this deal") : active ? "Retirer des favoris" : "Ajouter aux favoris"
       }
-      className={`grid place-items-center rounded-full bg-white/90 backdrop-blur transition active:scale-90 ${className}`}
+      className={`grid place-items-center rounded-full bg-card/90 backdrop-blur transition active:scale-90 ${className}`}
     >
-      <Heart className={`size-5 ${active ? "fill-brand text-brand" : "text-ink"}`} strokeWidth={2} />
+      <Heart className={`size-5 ${active ? "fill-brand text-brand" : "text-fg"}`} strokeWidth={2} />
     </button>
   );
 }
