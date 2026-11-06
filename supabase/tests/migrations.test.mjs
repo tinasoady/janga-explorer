@@ -264,6 +264,19 @@ await one(S, `select public.review_pro_request('${P}', true)`);
 const reTrial = await one(null, `select trial_ends_at < now() past from public.subscriptions where user_id = '${P}'`);
 check("re-approval keeps old trial", reTrial.past === true);
 
+// Photos supplémentaires : 7 au plus, en https, et leur changement renvoie l'offre en validation
+check("sample galleries added", Number((await one(null, "select count(*) n from public.offers where cardinality(image_urls) > 0")).n) === 8);
+const photosOk = await as(A, `update public.offers set image_urls = array['https://x.supabase.co/b.jpg', 'https://x.supabase.co/c.jpg'] where id = '${offQ}' returning id`);
+check("valid extra photos accepted", photosOk.rows?.length === 1, photosOk.error);
+const tooMany = await as(A, `update public.offers set image_urls = array_fill('https://x.supabase.co/a.jpg'::text, array[8]) where id = '${offQ}'`);
+check("more than 7 extra photos refused", !!tooMany.error, tooMany.error);
+const notHttps = await as(A, `update public.offers set image_urls = array['http://x.supabase.co/a.jpg'] where id = '${offQ}'`);
+check("non-https photo refused", !!notHttps.error, notHttps.error);
+await as(A, `update public.offers set status = 'published', pass_until = valid_until where id = '${offQ}'`);
+const rephoto = await as(Q, `update public.offers set image_urls = array['https://x.supabase.co/d.jpg'] where id = '${offQ}' returning status`);
+check("changing photos sends offer back to review", rephoto.rows?.[0]?.status === "pending", rephoto.error ?? JSON.stringify(rephoto.rows));
+check("photo bucket limit is 10 MB", Number((await one(null, "select file_size_limit l from storage.buckets where id = 'offer-images'")).l) === 10485760);
+
 // Offres d'exemple : publiées, marquées, protégées des pros, prolongées et supprimées en bloc
 const samples = await one(null, `select count(*)::int n, bool_and(o.status = 'published') published
   from public.offers o join public.businesses b on b.id = o.business_id where b.is_sample`);
